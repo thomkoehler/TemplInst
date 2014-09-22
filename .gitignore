@@ -1,1 +1,5 @@
-/.dist-buildwrapper/
+.dist-buildwrapper/
+.cabal-sandbox/
+cabal.sandbox.config
+dist/
+Test/.HTF/
