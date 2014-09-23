@@ -15,7 +15,7 @@ type TiHeap = Heap Node
 type TiGlobals = ASSOC Name Addr
 
 
-data TiStats = TiStats --TODO TiStats 
+data TiStats = TiStats deriving Show --TODO TiStats 
 
 
 data TiState = TiState
@@ -25,12 +25,14 @@ data TiState = TiState
       tiGlobals :: TiGlobals,
       tiStats :: TiStats  
    } 
+   deriving Show
 
 
 data Node 
    = NAp Addr Addr
    | NSupercomb Name [Name] CoreExpr 
    | NNum Int
+   deriving Show
    
 
 isDataNode :: Node -> Bool
@@ -41,8 +43,15 @@ isDataNode  _ = False
 preludeDefs :: [CoreScDefn]
 preludeDefs = []
 
+
 extraPreludeDefs :: [CoreScDefn]
 extraPreludeDefs = []
+
+
+runProg = eval . compile . parse
+
+
+parse = id --TODO parse
 
 
 compile :: [CoreScDefn] -> TiState

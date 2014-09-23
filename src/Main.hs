@@ -2,9 +2,24 @@
 
 module Main where
 
+import qualified Text.Show.Pretty as Pr
+
+import Evaluator
+import Language
+
 -----------------------------------------------------------------------------------------------------------------------
 
-main::IO()
-main = undefined
+
+main0 = ScDefn
+   {
+      scName = "main",
+      scArgs = [],
+      scExpr = ENum 1
+   } 
+
+
+main :: IO()
+main = do
+   putStrLn $ Pr.ppShow $ runProg [main0]
 
 -----------------------------------------------------------------------------------------------------------------------
