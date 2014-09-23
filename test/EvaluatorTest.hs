@@ -36,7 +36,7 @@ fst p = p K ;
 snd p = p K1 ;
 
 f x y = 
-   letrec
+   let
       a = pair x b ;
       b = pair y a ;
    in
