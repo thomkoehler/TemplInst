@@ -176,17 +176,8 @@ instantiate (EAp expr1 expr2) heap env = hAlloc heap2 (NAp addr1 addr2)
       (heap2, addr2) = instantiate expr2 heap1 env
   
 instantiate (EVar name) heap env = (heap, aLookup env name (error ("Undefined name " ++ show name)))  
-
-instantiate (ELet False defs body) heap env = instantiate body heap' env'
-   where
-      (heap', env') = foldl' stepFun (heap, env) defs
-      stepFun (h, e) (name, expr) =
-         let
-            (h', addr) = instantiate expr h env
-         in
-            (h', aInsert name addr e)
-            
-instantiate (ELet True defs body) heap env = instantiate body heap' env'
+          
+instantiate (ELet defs body) heap env = instantiate body heap' env'
    where
       (heap', env') = foldl' stepFun (heap, env) defs
       stepFun (h, e) (name, expr) =
