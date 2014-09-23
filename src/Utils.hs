@@ -74,4 +74,9 @@ aEmpty = Map.empty
 aInsert :: Ord k => k -> x -> ASSOC k x -> ASSOC k x  
 aInsert = Map.insert
 
+aInsertList :: Ord k => [(k, x)] -> ASSOC k x -> ASSOC k x
+aInsertList kxs m = foldl step m kxs 
+   where 
+      step m0 (k, x) = aInsert k x m0 
+
 -----------------------------------------------------------------------------------------------------------------------

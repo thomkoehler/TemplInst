@@ -33,6 +33,11 @@ data Node
    | NNum Int
    
 
+isDataNode :: Node -> Bool
+isDataNode (NNum _) = True
+isDataNode  _ = False
+
+
 preludeDefs :: [CoreScDefn]
 preludeDefs = []
 
@@ -51,9 +56,9 @@ compile program = TiState initStack initHeap globals initStat
 
 
 buildInitialHeap :: [CoreScDefn] -> (TiHeap, TiGlobals)
-buildInitialHeap = foldl' step (hInitial, aEmpty)
+buildInitialHeap = foldl' stepFun (hInitial, aEmpty)
    where
-      step (heap, env) (ScDefn name args body) = 
+      stepFun (heap, env) (ScDefn name args body) = 
          let
             (heap', addr) = hAlloc heap (NSupercomb name args body)
             env' = aInsert name addr env
@@ -72,13 +77,46 @@ eval state = state : restStates
 
 
 doAdmin :: TiState -> TiState
-doAdmin = undefined
+doAdmin = id --TODO diAdmin
+
 
 tiFinal :: TiState -> Bool
-tiFinal = undefined
+tiFinal state = isDataNode $ hLookup (tiHeap state) addr
+   where
+      [addr] = tiStack state
+
 
 step :: TiState -> TiState
-step = undefined 
+step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
+   where
+      dispatch (NNum _) = error "Number applied as a function!"
+      dispatch (NAp a1 _) = apStep state a1
+      dispatch (NSupercomb _ argNames body) = scStep state argNames body 
+      
+      
+apStep :: TiState -> Addr -> TiState
+apStep state addr1 = state { tiStack = addr1 : tiStack state }
+
+
+scStep :: TiState -> [Name] -> CoreExpr -> TiState
+scStep state argNames body = state
+   {
+      tiStack = resultAddr : drop (length argNames + 1) (tiStack state),
+      tiHeap = newHeap
+   }
+   where
+      argBinding = zip argNames $ getArgs (tiHeap state) $ tiStack state
+      env = aInsertList argBinding $ tiGlobals state
+      (newHeap, resultAddr) = instantiate body (tiHeap state) env
+
+
+getArgs :: TiHeap -> TiStack -> [Addr]
+getArgs  heap (_ : stack) = map getArg stack
+   where
+      getArg addr = arg
+         where
+            (NAp _ arg) = hLookup heap addr
+         
 
 
 instantiate :: CoreExpr -> TiHeap -> ASSOC Name Addr -> (TiHeap, Addr)

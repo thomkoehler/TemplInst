@@ -26,7 +26,7 @@ type CoreProgram  = Program Name
 
 data ScDefn a = ScDefn
    {
-      scName :: Name,
+      scName :: !Name,
       scArgs :: [a],
       scExpr :: Expr a
    }
