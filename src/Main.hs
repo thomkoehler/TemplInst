@@ -11,6 +11,7 @@ import Language
 
 main :: IO()
 main = do
-   putStrLn $ Pr.ppShow $ runProg "main = 1;"
+   putStrLn $ Pr.ppShow $ runProg "id x = x; main = id 1;"
+   putStrLn $ Pr.ppShow $ runProg "id x = x; main = id;"
 
 -----------------------------------------------------------------------------------------------------------------------

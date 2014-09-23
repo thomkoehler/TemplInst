@@ -33,6 +33,7 @@ data Node
    = NAp Addr Addr
    | NSupercomb Name [Name] CoreExpr 
    | NNum Int
+   | NInd Addr
    deriving Show
    
 
@@ -130,8 +131,12 @@ step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
    where
       dispatch (NNum _) = error "Number applied as a function!"
       dispatch (NAp a1 _) = apStep state a1
-      dispatch (NSupercomb _ argNames body) = scStep state argNames body 
+      dispatch (NSupercomb _ argNames body) = scStep state argNames body
+      dispatch (NInd addr) = indStep state addr 
       
+      
+indStep :: TiState -> Addr -> TiState
+indStep state addr = state { tiStack = addr : tail (tiStack state) }
       
 apStep :: TiState -> Addr -> TiState
 apStep state addr1 = state { tiStack = addr1 : tiStack state }
@@ -140,13 +145,17 @@ apStep state addr1 = state { tiStack = addr1 : tiStack state }
 scStep :: TiState -> [Name] -> CoreExpr -> TiState
 scStep state argNames body = state
    {
-      tiStack = resultAddr : drop (length argNames + 1) (tiStack state),
-      tiHeap = newHeap
+      tiStack = indAddr : saveDrop (length argNames + 1) (tiStack state),
+      tiHeap = newHeap'
    }
    where
       argBinding = zip argNames $ getArgs (tiHeap state) $ tiStack state
       env = aInsertList argBinding $ tiGlobals state
       (newHeap, resultAddr) = instantiate body (tiHeap state) env
+      (newHeap', indAddr) = hAlloc newHeap $ NInd resultAddr   
+      saveDrop size stack = if size > length stack
+         then error "Applied to too few arguments"
+         else drop size stack
 
 
 getArgs :: TiHeap -> TiStack -> [Addr]
@@ -166,6 +175,45 @@ instantiate (EAp expr1 expr2) heap env = hAlloc heap2 (NAp addr1 addr2)
       (heap1, addr1) = instantiate expr1 heap env
       (heap2, addr2) = instantiate expr2 heap1 env
   
-instantiate (EVar v) heap env = (heap, aLookup env v (error ("Undefined name " ++ show v)))  
+instantiate (EVar name) heap env = (heap, aLookup env name (error ("Undefined name " ++ show name)))  
 
+instantiate (ELet False defs body) heap env = instantiate body heap' env'
+   where
+      (heap', env') = foldl' stepFun (heap, env) defs
+      stepFun (h, e) (name, expr) =
+         let
+            (h', addr) = instantiate expr h env
+         in
+            (h', aInsert name addr e)
+            
+instantiate (ELet True defs body) heap env = instantiate body heap' env'
+   where
+      (heap', env') = foldl' stepFun (heap, env) defs
+      stepFun (h, e) (name, expr) =
+         let
+            (h', addr) = instantiate expr h env'
+         in
+            (h', aInsert name addr e)
+      
+instantiateAndUpdate
+   :: CoreExpr -- Body of supercombinator
+   -> Addr -- Address of node to update
+   -> TiHeap -- Heap before instantiation
+   -> ASSOC Name Addr -- Associate parameters to addresses
+   -> TiHeap -- Heap after instantiation
+   
+instantiateAndUpdate (EAp e1 e2) updAddr heap env = hUpdate heap2 updAddr (NAp addr1 addr2)
+   where
+      (heap1, addr1) = instantiate e1 heap env
+      (heap2, addr2) = instantiate e2 heap env
+
+instantiateAndUpdate (EVar name) updAddr heap env = hUpdate heap updAddr $ NInd varAddr  
+   where
+      varAddr = aLookup env name (error ("Undefined name " ++ show name))
+
+instantiateAndUpdate (ENum n) updAddr heap _ = hUpdate heap updAddr $ NNum n
+
+   
+     
+   
 -----------------------------------------------------------------------------------------------------------------------

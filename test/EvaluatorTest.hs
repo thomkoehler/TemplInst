@@ -13,6 +13,19 @@ import Test.Framework
 
 -----------------------------------------------------------------------------------------------------------------------
 
+prop_simpleMain0:: Bool
+prop_simpleMain0 = getResult (runProg "main = 1;") == 1
+
+prop_simpleMain1:: Bool
+prop_simpleMain1 = getResult (runProg "main = S K K 3;") == 3
+
+prop_simpleMain2:: Bool
+prop_simpleMain2 = getResult (runProg "id x = x; main = id 5;") == 5
+
+prop_simpleMain3:: Bool
+prop_simpleMain3 = getResult (runProg "x = 2; main = x;") == 2
+
+
 prog0 :: String
 prog0 = [r|
 
@@ -33,14 +46,6 @@ main = f 3 4 ;
    
 |]
 
-prop_simpleMain0:: Bool
-prop_simpleMain0 = getResult (runProg "main = 1;") == 1
-
-prop_simpleMain1:: Bool
-prop_simpleMain1 = getResult (runProg "main = S K K 3;") == 3
-
-prop_simpleMain2:: Bool
-prop_simpleMain2 = getResult (runProg "id x = x; main = id 5;") == 5
 
 prop_prog0 :: Bool
 prop_prog0 = getResult (runProg prog0) == 4
