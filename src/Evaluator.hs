@@ -196,7 +196,7 @@ instantiateAndUpdate
 instantiateAndUpdate (EAp e1 e2) updAddr heap env = hUpdate heap2 updAddr (NAp addr1 addr2)
    where
       (heap1, addr1) = instantiate e1 heap env
-      (heap2, addr2) = instantiate e2 heap env
+      (heap2, addr2) = instantiate e2 heap1 env
 
 instantiateAndUpdate (EVar name) updAddr heap env = hUpdate heap updAddr $ NInd varAddr  
    where
