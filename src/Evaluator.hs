@@ -120,9 +120,9 @@ doAdmin = id --TODO diAdmin
 
 
 tiFinal :: TiState -> Bool
-tiFinal state = isDataNode $ hLookup (tiHeap state) addr
-   where
-      [addr] = tiStack state
+tiFinal (TiState [addr] heap _ _) = isDataNode $ hLookup heap addr
+tiFinal (TiState [] _ _ _) = error "Empty stack!"
+tiFinal _ = False
 
 
 step :: TiState -> TiState
