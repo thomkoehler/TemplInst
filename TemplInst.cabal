@@ -7,11 +7,23 @@ author:         Koehler
 executable TemplInst
   hs-source-dirs:  src
   main-is:         Main.hs
-  build-depends:   base >= 4, containers, pretty-show
+  build-depends:   base >= 4, containers, pretty-show, array
   ghc-options:     -Wall -rtsopts -O2
   build-tools:     alex, happy
   other-modules:   
                    Evaluator,
                    Utils,
                    Language
+
+test-suite Test
+  type:            exitcode-stdio-1.0
+  main-is:         Test.hs
+  ghc-options:     -Wall -rtsopts
+  build-depends:   base >= 4, HTF > 0.9
+  other-modules:   
+                  Evaluator,
+                  EvaluatorTest
+  hs-source-dirs:  
+                  test,
+                  src
 

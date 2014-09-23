@@ -7,6 +7,7 @@ module Utils where
 
 import qualified Data.Map.Strict as Map
 import Data.Maybe(fromMaybe)
+import Data.List(foldl')
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -75,7 +76,7 @@ aInsert :: Ord k => k -> x -> ASSOC k x -> ASSOC k x
 aInsert = Map.insert
 
 aInsertList :: Ord k => [(k, x)] -> ASSOC k x -> ASSOC k x
-aInsertList kxs m = foldl step m kxs 
+aInsertList kxs m = foldl' step m kxs 
    where 
       step m0 (k, x) = aInsert k x m0 
 

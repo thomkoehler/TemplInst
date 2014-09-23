@@ -1,12 +1,13 @@
 
 -----------------------------------------------------------------------------------------------------------------------
 
-module Evaluator where
+module Evaluator(runProg, getResult) where
 
 import Data.List(foldl')
 
 import Utils
 import Language
+import Grammar(parse)
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -67,10 +68,20 @@ extraPreludeDefs :: [CoreScDefn]
 extraPreludeDefs = []
 
 
+runProg :: String -> [TiState]
 runProg = eval . compile . parse
 
 
-parse = id --TODO parse
+getResult :: [TiState] -> Int
+getResult states = 
+   let
+      state = last states
+      (addr : _) = tiStack state
+      (NNum res) = hLookup (tiHeap state) addr
+   in
+      res
+    
+    
 
 
 compile :: [CoreScDefn] -> TiState
