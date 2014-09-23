@@ -40,8 +40,27 @@ isDataNode (NNum _) = True
 isDataNode  _ = False
 
 
+{--
+
+Ix = x;
+K x y = x;
+K1 x y = y ;
+S f g x = f x (g x) ;
+compose f g x = f (g x) ;
+twice f = compose f f ;
+
+--}
+
 preludeDefs :: [CoreScDefn]
-preludeDefs = []
+preludeDefs = 
+   [
+      ScDefn "I" ["x"] (EVar "x"),
+      ScDefn "K" ["x", "y"] (EVar "x"),
+      ScDefn "K1" ["x", "y"] (EVar "y"),
+      ScDefn "S" ["f", "g", "x"] (EAp (EAp (EVar "f") (EVar "x"))(EAp (EVar "g") (EVar "x"))),
+      ScDefn "compose" ["f", "g", "x"] (EAp (EVar "f") (EAp (EVar "g") (EVar "x"))),
+      ScDefn "twice" ["f"] (EAp (EAp (EVar "compose") (EVar "f")) (EVar "f"))
+   ]
 
 
 extraPreludeDefs :: [CoreScDefn]

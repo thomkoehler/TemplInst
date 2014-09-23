@@ -8,7 +8,8 @@ executable TemplInst
   hs-source-dirs:  src
   main-is:         Main.hs
   build-depends:   base >= 4, containers, pretty-show
-  ghc-options:     -Wall
+  ghc-options:     -Wall -rtsopts -O2
+  build-tools:     alex, happy
   other-modules:   
                    Evaluator,
                    Utils,
