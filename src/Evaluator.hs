@@ -145,14 +145,14 @@ apStep state addr1 = state { tiStack = addr1 : tiStack state }
 scStep :: TiState -> [Name] -> CoreExpr -> TiState
 scStep state argNames body = state
    {
-      tiStack = addrSc : saveDrop (length argNames + 1) (stack),
+      tiStack = addrSc : saveDrop (length argNames + 1) stack,
       tiHeap = newHeap
    }
    where
       argBinding = zip argNames $ getArgs (tiHeap state) $ tiStack state
       env = aInsertList argBinding $ tiGlobals state
       stack =  tiStack state
-      addrSc = head stack 
+      addrSc = stack !! length argNames
       newHeap = instantiateAndUpdate body addrSc (tiHeap state) env
       saveDrop size st = if size > length st
          then error "Applied to too few arguments"
@@ -205,7 +205,13 @@ instantiateAndUpdate (EVar name) updAddr heap env = hUpdate heap updAddr $ NInd 
 
 instantiateAndUpdate (ENum n) updAddr heap _ = hUpdate heap updAddr $ NNum n
 
-   
-     
+instantiateAndUpdate (ELet defs body) updAddr heap env = instantiateAndUpdate body updAddr heap1 env1
+   where
+      (heap1, env1) = foldl' stepFun (heap, env) defs
+      stepFun (h, e) (name, expr) =
+         let
+            (h', addr) = instantiate expr h env1
+         in
+            (h', aInsert name addr e)
    
 -----------------------------------------------------------------------------------------------------------------------

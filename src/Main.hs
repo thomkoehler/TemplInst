@@ -5,13 +5,12 @@ module Main where
 import qualified Text.Show.Pretty as Pr
 
 import Evaluator
-import Language
 
 -----------------------------------------------------------------------------------------------------------------------
 
 main :: IO()
 main = do
-   putStrLn $ Pr.ppShow $ runProg "id x = x; main = id 1;"
-   putStrLn $ Pr.ppShow $ runProg "id x = x; main = id;"
+   --putStrLn $ Pr.ppShow $ runProg "id x = x; main = id 1;"
+   putStrLn $ Pr.ppShow $ runProg "main = let x = 1; in x;"
 
 -----------------------------------------------------------------------------------------------------------------------
