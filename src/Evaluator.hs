@@ -25,6 +25,7 @@ data TiState = TiState
       tiStack :: TiStack,
       tiHeap :: TiHeap,
       tiGlobals :: TiGlobals,
+      tiDump :: TiDump,
       tiStats :: TiStats  
    } 
    deriving Show
@@ -97,7 +98,7 @@ getResult states =
 
 
 compile :: [CoreScDefn] -> TiState
-compile program = TiState initStack initHeap globals initStat
+compile program = TiState initStack initHeap globals [] initStat
    where
       scDefs = program ++ preludeDefs ++ extraPreludeDefs
       (initHeap, globals) = buildInitialHeap scDefs
@@ -151,20 +152,26 @@ doAdmin = id --TODO diAdmin
 
 
 tiFinal :: TiState -> Bool
-tiFinal (TiState [addr] heap _ _) = isDataNode $ hLookup heap addr
-tiFinal (TiState [] _ _ _) = error "Empty stack!"
+tiFinal (TiState [addr] heap _ [] _) = isDataNode $ hLookup heap addr
+tiFinal (TiState [] _ _ _ _) = error "Empty stack!"
 tiFinal _ = False
 
 
 step :: TiState -> TiState
 step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
    where
-      dispatch (NNum _) = error "Number applied as a function!"
+      dispatch (NNum _) = numStep state
       dispatch (NAp a1 _) = apStep state a1
       dispatch (NSupercomb _ argNames body) = scStep state argNames body
       dispatch (NInd addr) = indStep state addr 
       dispatch (NPrim name prim) = primStep state name prim
       
+      
+numStep :: TiState -> TiState
+numStep state =
+   case tiDump state of
+      []               -> error "Number applied as a function!"
+      (stack' : dump') -> state { tiStack = stack', tiDump = dump' } 
       
 primStep :: TiState -> Name -> Primitive -> TiState
 primStep state _ Neg = state 
@@ -181,8 +188,7 @@ primStep state _ Neg = state
       heap' = case argNode of
          (NNum n) -> hUpdate heap rootAddr $ NNum (- n)
          _        -> undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
-  
-         
+        
        
 primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
       
@@ -241,13 +247,7 @@ instantiate (ELet defs body) heap env = instantiate body heap' env'
          in
             (h', aInsert name addr e)
       
-instantiateAndUpdate
-   :: CoreExpr -- Body of supercombinator
-   -> Addr -- Address of node to update
-   -> TiHeap -- Heap before instantiation
-   -> ASSOC Name Addr -- Associate parameters to addresses
-   -> TiHeap -- Heap after instantiation
-   
+instantiateAndUpdate :: CoreExpr -> Addr -> TiHeap -> ASSOC Name Addr -> TiHeap
 instantiateAndUpdate (EAp e1 e2) updAddr heap env = hUpdate heap2 updAddr (NAp addr1 addr2)
    where
       (heap1, addr1) = instantiate e1 heap env
