@@ -18,7 +18,6 @@ import Language
     int     { TokenInt _ $$ }
     id      { TokenId _ $$ }
     let     { TkStrSym _ "let" }
-    letrec  { TkStrSym _ "letrec" }
     in      { TkStrSym _ "in" }
     case    { TkStrSym _ "case" }
     of      { TkStrSym _ "of" }
@@ -77,8 +76,7 @@ Expr
 
 
 Expr10n 
-   : let Defs in Expr { ELet False $2 $4 }
-   | letrec Defs in Expr  { ELet True $2 $4 }
+   : let Defs in Expr { ELet $2 $4 }
    | case Expr of '{' Alts '}' { ECase $2 $5 }
    | '\\' ArgNames '.' Expr ';' { ELam $2 $4 }
    | FExpr { $1 } 

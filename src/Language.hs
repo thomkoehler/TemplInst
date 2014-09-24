@@ -10,7 +10,7 @@ data Expr a
    | EConstr !Int !Int
    | EConst !Int !Int
    | EAp (Expr a) (Expr a)
-   | ELet Bool [(a, Expr a)] (Expr a)
+   | ELet [(a, Expr a)] (Expr a)
    | ECase (Expr a) [Alter a]
    | ELam [a] (Expr a)
    deriving (Show, Eq)
