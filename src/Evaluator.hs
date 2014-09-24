@@ -167,7 +167,24 @@ step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
       
       
 primStep :: TiState -> Name -> Primitive -> TiState
-primStep = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
+primStep state _ Neg = state 
+   {
+      tiStack = rootAddr : saveDrop 2 stack, 
+      tiHeap = heap' 
+   } 
+   where
+      heap = tiHeap state
+      stack = tiStack state
+      rootAddr = head stack
+      argAddr = head $ getArgs heap stack
+      argNode = hLookup heap argAddr
+      heap' = case argNode of
+         (NNum n) -> hUpdate heap rootAddr $ NNum (- n)
+         _        -> undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
+  
+         
+       
+primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
       
 indStep :: TiState -> Addr -> TiState
 indStep state addr = state { tiStack = addr : tail (tiStack state) }
@@ -188,9 +205,12 @@ scStep state argNames body = state
       stack =  tiStack state
       addrSc = stack !! length argNames
       newHeap = instantiateAndUpdate body addrSc (tiHeap state) env
-      saveDrop size st = if size > length st
-         then error "Applied to too few arguments"
-         else drop size st
+
+
+saveDrop :: Int -> [a] -> [a]
+saveDrop size lst = if size > length lst
+   then error "Applied to too few arguments"
+   else drop size lst
 
 
 getArgs :: TiHeap -> TiStack -> [Addr]

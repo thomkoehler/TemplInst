@@ -10,7 +10,6 @@ import Evaluator
 
 main :: IO()
 main = do
-   --putStrLn $ Pr.ppShow $ runProg "id x = x; main = id 1;"
-   putStrLn $ Pr.ppShow $ runProg "main = let x = 1; in x;"
+   putStrLn $ Pr.ppShow $ runProg "main = neg 1;"
 
 -----------------------------------------------------------------------------------------------------------------------

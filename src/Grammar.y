@@ -85,12 +85,12 @@ Expr10n
 FExpr 
    : AExpr { $1 }
    | FExpr AExpr { EAp $1 $2 }
-   
  
  
-AExpr : int { ENum $1 }
-      | id { EVar $1 }
-      | '(' Expr ')' { $2 }
+AExpr 
+   : int { ENum $1 }
+   | id { EVar $1 }
+   | '(' Expr ')' { $2 }
 
 
 Defs
