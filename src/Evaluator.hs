@@ -14,6 +14,7 @@ import Grammar(parse)
 type TiStack = [Addr]
 type TiHeap = Heap Node
 type TiGlobals = ASSOC Name Addr
+type TiDump = [TiStack]
 
 
 data TiStats = TiStats deriving Show --TODO TiStats 
@@ -34,6 +35,16 @@ data Node
    | NSupercomb Name [Name] CoreExpr 
    | NNum Int
    | NInd Addr
+   | NPrim Name Primitive
+   deriving Show
+   
+
+data Primitive 
+   = Neg
+   | Add
+   | Sub
+   | Mul
+   | Div
    deriving Show
    
 
@@ -100,11 +111,30 @@ buildInitialHeap = foldl' stepFun (hInitial, aEmpty)
    where
       stepFun (heap, env) (ScDefn name args body) = 
          let
-            (heap', addr) = hAlloc heap (NSupercomb name args body)
-            env' = aInsert name addr env
+            (heap1, addr) = hAlloc heap (NSupercomb name args body)
+            env1 = aInsert name addr env
+            (heap2, env2) = allocatePrim heap1 env1 primitives
          in
-            (heap', env')
+            (heap2, env2)
 
+allocatePrim :: TiHeap -> TiGlobals -> [(Name, Primitive)] -> (TiHeap, TiGlobals)
+allocatePrim heap env = foldl' stepFun (heap, env)
+   where
+      stepFun (h, e) (name, p) = (h', e')
+         where
+            (h', addr) = hAlloc h (NPrim name p)
+            e' = aInsert name addr e   
+
+
+primitives :: [(Name, Primitive)]
+primitives = 
+   [
+      ("neg", Neg),
+      ("+", Add),
+      ("-", Sub),
+      ("*", Mul),
+      ("/", Div)
+   ]
 
 eval :: TiState -> [TiState]
 eval state = state : restStates
@@ -133,7 +163,11 @@ step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
       dispatch (NAp a1 _) = apStep state a1
       dispatch (NSupercomb _ argNames body) = scStep state argNames body
       dispatch (NInd addr) = indStep state addr 
+      dispatch (NPrim name prim) = primStep state name prim
       
+      
+primStep :: TiState -> Name -> Primitive -> TiState
+primStep = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
       
 indStep :: TiState -> Addr -> TiState
 indStep state addr = state { tiStack = addr : tail (tiStack state) }
