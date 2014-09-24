@@ -25,6 +25,15 @@ prop_simpleMain2 = getResult (runProg "id x = x; main = id 5;") == 5
 prop_simpleMain3:: Bool
 prop_simpleMain3 = getResult (runProg "x = 2; main = x;") == 2
 
+prop_simpleMain4:: Bool
+prop_simpleMain4 = getResult (runProg "main = neg 3;") == -3
+
+prop_simpleMain5:: Bool
+prop_simpleMain5 = getResult (runProg "main = twice neg 3;") == 3
+
+prop_simpleMain6:: Bool
+prop_simpleMain6 = getResult (runProg "main = neg (I 3);") == -3
+
 
 prog0 :: String
 prog0 = [r|
