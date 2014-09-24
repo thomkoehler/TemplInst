@@ -145,17 +145,18 @@ apStep state addr1 = state { tiStack = addr1 : tiStack state }
 scStep :: TiState -> [Name] -> CoreExpr -> TiState
 scStep state argNames body = state
    {
-      tiStack = indAddr : saveDrop (length argNames + 1) (tiStack state),
-      tiHeap = newHeap'
+      tiStack = addrSc : saveDrop (length argNames + 1) (stack),
+      tiHeap = newHeap
    }
    where
       argBinding = zip argNames $ getArgs (tiHeap state) $ tiStack state
       env = aInsertList argBinding $ tiGlobals state
-      (newHeap, resultAddr) = instantiate body (tiHeap state) env
-      (newHeap', indAddr) = hAlloc newHeap $ NInd resultAddr   
-      saveDrop size stack = if size > length stack
+      stack =  tiStack state
+      addrSc = head stack 
+      newHeap = instantiateAndUpdate body addrSc (tiHeap state) env
+      saveDrop size st = if size > length st
          then error "Applied to too few arguments"
-         else drop size stack
+         else drop size st
 
 
 getArgs :: TiHeap -> TiStack -> [Addr]
