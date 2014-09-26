@@ -53,6 +53,9 @@ isDataNode :: Node -> Bool
 isDataNode (NNum _) = True
 isDataNode  _ = False
 
+isIndNode :: Node -> Bool
+isIndNode (NInd _ ) = True
+isIndNode _ = False
 
 {--
 
@@ -158,10 +161,11 @@ tiFinal _ = False
 
 
 step :: TiState -> TiState
-step state = dispatch $ hLookup (tiHeap state) $ head $ tiStack state
+step state = dispatch $ hLookup (tiHeap state) nodeAddr
    where
+      nodeAddr = head $ tiStack state
       dispatch (NNum _) = numStep state
-      dispatch (NAp a1 _) = apStep state a1
+      dispatch (NAp a1 a2) = apStep state nodeAddr a1 a2
       dispatch (NSupercomb _ argNames body) = scStep state argNames body
       dispatch (NInd addr) = indStep state addr 
       dispatch (NPrim name prim) = primStep state name prim
@@ -195,8 +199,11 @@ primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> Ti
 indStep :: TiState -> Addr -> TiState
 indStep state addr = state { tiStack = addr : tail (tiStack state) }
       
-apStep :: TiState -> Addr -> TiState
-apStep state addr1 = state { tiStack = addr1 : tiStack state }
+apStep :: TiState -> Addr -> Addr -> Addr -> TiState
+apStep state addr addr1 addr2 = 
+   case hLookup (tiHeap state) addr2 of
+      (NInd addr3) -> state { tiHeap = hUpdate (tiHeap state) addr (NAp addr1 addr3) }
+      _            -> state { tiStack = addr1 : tiStack state }
 
 
 scStep :: TiState -> [Name] -> CoreExpr -> TiState

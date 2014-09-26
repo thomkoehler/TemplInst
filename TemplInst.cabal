@@ -7,7 +7,7 @@ author:         Koehler
 executable TemplInst
   hs-source-dirs:  src
   main-is:         Main.hs
-  build-depends:   base >= 4, containers, pretty-show, array
+  build-depends:   base >= 4, containers, pretty-show, array, indents
   ghc-options:     -Wall -rtsopts -O2
   build-tools:     alex, happy
   other-modules:   
