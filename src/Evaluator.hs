@@ -178,21 +178,27 @@ numStep state =
       (stack' : dump') -> state { tiStack = stack', tiDump = dump' } 
       
 primStep :: TiState -> Name -> Primitive -> TiState
-primStep state _ Neg = state 
-   {
-      tiStack = rootAddr : saveDrop 2 stack, 
-      tiHeap = heap' 
-   } 
-   where
+
+
+primStep state _ Neg = 
+   let
       heap = tiHeap state
       stack = tiStack state
-      rootAddr = head stack
-      argAddr = head $ getArgs heap stack
+      (_ : apAddr : _) = stack
+      (NAp _ argAddr) = hLookup heap apAddr
       argNode = hLookup heap argAddr
-      heap' = case argNode of
-         (NNum n) -> hUpdate heap rootAddr $ NNum (- n)
-         _        -> undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
-        
+   in
+      case argNode of
+         (NNum n) -> state
+            {
+               tiStack = drop 1 stack,
+               tiHeap = hUpdate heap apAddr $ NNum (- n)
+            }   
+         _        -> state
+            {
+               tiStack = [argAddr],
+               tiDump =  [apAddr] : tiDump state               
+            }
        
 primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
       
