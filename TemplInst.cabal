@@ -1,29 +1,28 @@
-name:           TemplInst
-version:        0.1
-cabal-version:  >=1.2
-build-type:     Simple
-author:         Koehler
+name: TemplInst
+version: 0.1
+cabal-version: >=1.2
+build-type: Simple
+license: AllRightsReserved
+license-file: ""
+author: Koehler
+data-dir: ""
 
 executable TemplInst
-  hs-source-dirs:  src
-  main-is:         Main.hs
-  build-depends:   base >= 4, containers, pretty-show, array, indents
-  ghc-options:     -Wall -rtsopts -O2
-  build-tools:     alex, happy
-  other-modules:   
-                   Evaluator,
-                   Utils,
-                   Language
+    build-depends: base >=4, containers -any, pretty-show -any,
+                   array -any, indents -any, parsec -any, mtl -any
+    main-is: Main.hs
+    buildable: True
+    build-tools: alex -any, happy -any
+    hs-source-dirs: src
+    other-modules: Evaluator Parser Utils Language Tokens Grammar
+    ghc-options: -Wall -rtsopts -O2
 
 test-suite Test
-  type:            exitcode-stdio-1.0
-  main-is:         Test.hs
-  ghc-options:     -Wall -rtsopts
-  build-depends:   base >= 4, HTF > 0.9, raw-strings-qq
-  other-modules:   
-                  Evaluator,
-                  EvaluatorTest
-  hs-source-dirs:  
-                  test,
-                  src
+    build-depends: base >=4, HTF >0.9, raw-strings-qq -any
+    type: exitcode-stdio-1.0
+    main-is: Test.hs
+    buildable: True
+    hs-source-dirs: test src
+    other-modules: Evaluator EvaluatorTest
+    ghc-options: -Wall -rtsopts
 
