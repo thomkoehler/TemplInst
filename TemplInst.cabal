@@ -23,6 +23,9 @@ test-suite Test
     main-is: Test.hs
     buildable: True
     hs-source-dirs: test src
-    other-modules: Evaluator EvaluatorTest
+    other-modules: 
+                   Evaluator,
+                   EvaluatorTest,
+                   ParserTest
     ghc-options: -Wall -rtsopts
 

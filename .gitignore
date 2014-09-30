@@ -3,9 +3,5 @@
 cabal.sandbox.config
 dist/
 Test/.HTF/
-/.dist-buildwrapper/
-/.dist-buildwrapper/
-/.dist-buildwrapper/
-/.dist-buildwrapper/
-/.dist-buildwrapper/
-/.dist-buildwrapper/
+.HTF/
+
