@@ -3,7 +3,8 @@
 module Parser(parse) where
 
 import Text.Parsec hiding(State, parse)
-import Text.Parsec.Char
+import qualified Text.Parsec.Token as P
+import Text.Parsec.Language
 import Text.Parsec.Indent
 import Control.Monad.State
 import Text.Printf(printf)
@@ -15,13 +16,30 @@ import Language
 type IParser a = ParsecT String () (State SourcePos) a
 
 
-reserved :: [Name]
-reserved =
-   [
-      "let",
-      "in",
-      "="
-   ]
+languageDef :: LanguageDef st
+languageDef = emptyDef
+   { 
+      P.commentStart = "/*",
+      P.commentEnd = "*/",
+      P.commentLine  = "//",
+      P.nestedComments = True,
+      P.identStart  = letter,
+      P.identLetter = alphaNum <|> oneOf "_'",
+      P.reservedNames = 
+         [
+            "let",
+            "in",
+            "="
+         ],
+      P.reservedOpNames = ["+", "-"],
+      P.caseSensitive  = True
+   }
+
+
+lexer = P.makeTokenParser languageDef
+
+identifier = P.identifier lexer
+reserved = P.reserved lexer 
 
 
 parse :: SourceName -> String -> [ScDefn Name]
@@ -35,16 +53,6 @@ iParse aParser srcName input =
    runIndent srcName $ runParserT aParser () srcName input
 
 
-var :: IParser Name
-var = do
-   n <- (letter <|> char '_' <?> "variable")
-   ns <- many (alphaNum <|> char '_' <|> char '\'' <?> "" )
-   let name = n:ns
-   if elem name reserved
-      then fail $ printf "keyword %s is unexpected" name
-      else return name
-
-
 program :: IParser [ScDefn Name]
 program = do 
    defn <- scDefn
@@ -53,9 +61,9 @@ program = do
 
 scDefn :: IParser (ScDefn Name)
 scDefn = do
-   name <- skipSpaces var
+   name <- identifier
    spaces
-   argNames <- many $ skipSpaces var
+   argNames <- many $ identifier
    _ <- skipSpaces $ string "="
    bl <- expr
    return $ ScDefn name argNames bl

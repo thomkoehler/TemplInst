@@ -9,7 +9,7 @@ data-dir: ""
 
 executable TemplInst
     build-depends: base >=4, containers -any, pretty-show -any,
-                   array -any, indents -any, parsec -any, mtl -any
+                   array -any, indents -any, parsec >=3, mtl -any
     main-is: Main.hs
     buildable: True
     build-tools: alex -any, happy -any
