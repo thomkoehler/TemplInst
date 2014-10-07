@@ -8,6 +8,7 @@ import Text.Parsec hiding(State, parse)
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Language
 import Text.Parsec.Indent
+import Text.Parsec.Expr
 import Control.Monad.State
 import Data.String
 import Text.Printf(printf)
@@ -81,11 +82,23 @@ scDefn = do
    return $ ScDefn name argNames bl
 
 
+table = 
+   [
+      [prefix "-"]
+   ]
+
 expr :: IParser (Expr  Name)
 expr = do
-   spaces
-   number
+   buildExpressionParser table term
+   <?> "expression"
 
+
+term :: IParser (Expr  Name)
+term = undefined
+
+prefix name = Prefix $ do
+   reservedOp name
+   return undefined
 
 
 skipSpaces :: IParser a -> IParser a
