@@ -16,8 +16,8 @@ import Language
 type IParser a = ParsecT String () (State SourcePos) a
 
 
-languageDef :: LanguageDef st
-languageDef = emptyDef
+languageDef :: GenLanguageDef String st (State SourcePos)
+languageDef = P.LanguageDef
    { 
       P.commentStart = "/*",
       P.commentEnd = "*/",
@@ -31,6 +31,8 @@ languageDef = emptyDef
             "in",
             "="
          ],
+      P.opStart = P.opLetter languageDef,
+      P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~",
       P.reservedOpNames = ["+", "-"],
       P.caseSensitive  = True
    }
