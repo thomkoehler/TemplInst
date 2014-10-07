@@ -1,5 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings #-}
+
 module Parser(parse) where
 
 import Text.Parsec hiding(State, parse)
@@ -7,16 +9,19 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Language
 import Text.Parsec.Indent
 import Control.Monad.State
+import Data.String
 import Text.Printf(printf)
+
+import qualified Data.ByteString.Char8 as C
 
 import Language
 
 -----------------------------------------------------------------------------------------------------------------------
 
-type IParser a = ParsecT String () (State SourcePos) a
+type IParser a = ParsecT C.ByteString () (State SourcePos) a
 
 
-languageDef :: GenLanguageDef String st (State SourcePos)
+languageDef :: GenLanguageDef C.ByteString st (State SourcePos)
 languageDef = P.LanguageDef
    { 
       P.commentStart = "/*",
@@ -41,7 +46,12 @@ languageDef = P.LanguageDef
 lexer = P.makeTokenParser languageDef
 
 identifier = P.identifier lexer
-reserved = P.reserved lexer 
+
+reserved :: String -> IParser ()
+reserved = P.reserved lexer
+ 
+reservedOp :: String -> IParser ()
+reservedOp = P.reservedOp lexer
 
 
 parse :: SourceName -> String -> [ScDefn Name]
@@ -52,7 +62,7 @@ parse srcName input = case iParse program srcName input of
 
 iParse :: IParser a -> SourceName -> String -> Either ParseError a
 iParse aParser srcName input =
-   runIndent srcName $ runParserT aParser () srcName input
+   runIndent srcName $ runParserT aParser () srcName $ C.pack input
 
 
 program :: IParser [ScDefn Name]
@@ -65,8 +75,8 @@ scDefn :: IParser (ScDefn Name)
 scDefn = do
    name <- identifier
    spaces
-   argNames <- many $ identifier
-   _ <- skipSpaces $ string "="
+   argNames <- many identifier
+   reservedOp "="
    bl <- expr
    return $ ScDefn name argNames bl
 
