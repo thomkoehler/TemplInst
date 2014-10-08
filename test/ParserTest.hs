@@ -35,5 +35,8 @@ prop_simpleMain0 = [simpleMain0] == parse "simpleMain0" "main = 1"
 prop_simpleMain1 :: Bool
 prop_simpleMain1 = [simpleMain1] == parse "simpleMain1" "main x y = 1"
 
+prop_simpleMain2 :: Bool
+prop_simpleMain2 = "main" == head (map scName (parse "simpleMain1" "main = twice neg 3"))
+
 -----------------------------------------------------------------------------------------------------------------------
 

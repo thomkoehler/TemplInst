@@ -1,7 +1,5 @@
 -----------------------------------------------------------------------------------------------------------------------
 
-{-# LANGUAGE OverloadedStrings #-}
-
 module Parser(parse) where
 
 import Text.Parsec hiding(State, parse)
@@ -10,8 +8,6 @@ import Text.Parsec.Language
 import Text.Parsec.Indent
 import Text.Parsec.Expr
 import Control.Monad.State
-import Data.String
-import Text.Printf(printf)
 
 import qualified Data.ByteString.Char8 as C
 
@@ -48,6 +44,9 @@ lexer = P.makeTokenParser languageDef
 
 identifier = P.identifier lexer
 
+integer = P.integer lexer 
+braces = P.braces lexer
+
 reserved :: String -> IParser ()
 reserved = P.reserved lexer
  
@@ -67,24 +66,24 @@ iParse aParser srcName input =
 
 
 program :: IParser [ScDefn Name]
-program = do 
-   defn <- scDefn
-   return [defn] 
+program = many scDefn 
 
 
-scDefn :: IParser (ScDefn Name)
-scDefn = do
+scHead :: IParser (Name, [Name])
+scHead = do
    name <- identifier
-   spaces
    argNames <- many identifier
    reservedOp "="
-   bl <- expr
-   return $ ScDefn name argNames bl
+   return (name, argNames)
+   
+
+scDefn :: IParser (ScDefn Name)
+scDefn = withBlock (\(name, args) [bl] -> ScDefn name args bl) scHead expr
 
 
 table = 
    [
-      [prefix "-"]
+      [Prefix (prefix "-")]
    ]
 
 expr :: IParser (Expr  Name)
@@ -93,27 +92,22 @@ expr = do
    <?> "expression"
 
 
+literal :: IParser (Expr  Name)
+literal = do
+   i <- integer
+   return $ ENum $ fromEnum i
+
 term :: IParser (Expr  Name)
-term = undefined
-
-prefix name = Prefix $ do
+term = choice 
+   [
+      literal,
+      braces expr      
+   ]
+   
+prefix :: String -> IParser (Expr Name -> Expr Name)
+prefix name = do
    reservedOp name
-   return undefined
-
-
-skipSpaces :: IParser a -> IParser a
-skipSpaces p = do
-   res <- p
-   spaces
-   return res
-
-
-  
-
-number :: IParser (Expr  Name)
-number = do
-   n <- many1 digit
-   return $ ENum $ read n 
+   return (EAp (EVar "neg"))
 
 
 -----------------------------------------------------------------------------------------------------------------------
