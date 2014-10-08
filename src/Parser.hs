@@ -71,6 +71,7 @@ iParse aParser srcName input =
 
 program :: IParser [ScDefn Name]
 program = do
+   spaces
    p <- many scDefn
    spaces 
    eof
@@ -96,6 +97,23 @@ expr :: IParser (Expr  Name)
 expr =
    buildExpressionParser table apExpr
    <?> "expression"
+   
+   
+defExpr :: IParser (Name, Expr  Name)
+defExpr = do
+   n <- identifier
+   reservedOp "="
+   e <- expr
+   return (n, e)
+
+
+letExpr :: IParser (Expr  Name)
+letExpr = do
+   reserved "let"  
+   defs <- many1 defExpr 
+   reserved "in"
+   e <- expr
+   return $ ELet defs e
    
    
 apExpr :: IParser (Expr  Name)
@@ -126,6 +144,7 @@ term :: IParser (Expr  Name)
 term = choice 
    [
       parens expr,
+      letExpr,
       literal,
       var
    ]
