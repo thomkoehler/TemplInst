@@ -12,9 +12,12 @@ executable TemplInst
                    array -any, indents -any, parsec >=3, mtl -any, bytestring -any
     main-is: Main.hs
     buildable: True
-    build-tools: alex -any, happy -any
     hs-source-dirs: src
-    other-modules: Evaluator Parser Utils Language Tokens Grammar
+    other-modules: 
+                   Evaluator,
+                   Parser,
+                   Utils,
+                   Language
     ghc-options: -Wall -rtsopts -O2
 
 test-suite Test
