@@ -1,5 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import qualified Text.Show.Pretty as Pr

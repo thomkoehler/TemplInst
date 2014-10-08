@@ -58,15 +58,15 @@ reservedOp :: String -> IParser ()
 reservedOp = P.reservedOp lexer
 
 
-parse :: SourceName -> String -> [ScDefn Name]
+parse :: SourceName -> C.ByteString -> [ScDefn Name]
 parse srcName input = case iParse program srcName input of
    Right res -> res 
    Left err -> error $ show err 
 
 
-iParse :: IParser a -> SourceName -> String -> Either ParseError a
+iParse :: IParser a -> SourceName -> C.ByteString -> Either ParseError a
 iParse aParser srcName input =
-   runIndent srcName $ runParserT aParser () srcName $ C.pack input
+   runIndent srcName $ runParserT aParser () srcName input
 
 
 program :: IParser [ScDefn Name]

@@ -4,6 +4,7 @@
 module Evaluator(runProg, getResult) where
 
 import Data.List(foldl')
+import qualified Data.ByteString.Char8 as C
 
 import Utils
 import Language
@@ -84,8 +85,8 @@ extraPreludeDefs :: [CoreScDefn]
 extraPreludeDefs = []
 
 
-runProg :: String -> [TiState]
-runProg = eval . compile . (parse "internal")
+runProg :: C.ByteString -> [TiState]
+runProg = eval . compile . parse "internal"
 
 
 getResult :: [TiState] -> Int

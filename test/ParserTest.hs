@@ -1,6 +1,7 @@
 -----------------------------------------------------------------------------------------------------------------------
 
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ParserTest where
 

@@ -3,6 +3,7 @@
 
 {-# OPTIONS_GHC -F -pgmF htfpp #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module EvaluatorTest where
 
