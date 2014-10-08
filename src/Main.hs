@@ -5,12 +5,12 @@ module Main where
 import qualified Text.Show.Pretty as Pr
 
 import Evaluator
-import Parser
 
 -----------------------------------------------------------------------------------------------------------------------
 
+
 main :: IO()
 main = do
-   putStrLn $ Pr.ppShow $ runProg "main = neg 1;"
+   putStrLn $ Pr.ppShow $ runProg "id x = x\nmain = id 5" 
 
 -----------------------------------------------------------------------------------------------------------------------

@@ -30,8 +30,7 @@ languageDef = P.LanguageDef
       P.reservedNames = 
          [
             "let",
-            "in",
-            "="
+            "in"
          ],
       P.opStart = P.opLetter languageDef,
       P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~",
@@ -40,12 +39,17 @@ languageDef = P.LanguageDef
    }
 
 
+lexer :: P.GenTokenParser C.ByteString () (State SourcePos)
 lexer = P.makeTokenParser languageDef
 
+identifier :: IParser String
 identifier = P.identifier lexer
 
+integer :: IParser Integer
 integer = P.integer lexer 
-braces = P.braces lexer
+
+parens :: IParser a -> IParser a
+parens = P.parens lexer
 
 reserved :: String -> IParser ()
 reserved = P.reserved lexer
@@ -66,49 +70,78 @@ iParse aParser srcName input =
 
 
 program :: IParser [ScDefn Name]
-program = many scDefn 
+program = do
+   p <- many scDefn
+   spaces 
+   eof
+   return p
 
 
-scHead :: IParser (Name, [Name])
-scHead = do
+scDefn :: IParser (ScDefn Name)
+scDefn = do
    name <- identifier
    argNames <- many identifier
    reservedOp "="
-   return (name, argNames)
-   
-
-scDefn :: IParser (ScDefn Name)
-scDefn = withBlock (\(name, args) [bl] -> ScDefn name args bl) scHead expr
+   e <- expr
+   return $ ScDefn name argNames e
 
 
+table :: [[Operator C.ByteString () (State SourcePos) (Expr Name)]]
 table = 
    [
       [Prefix (prefix "-")]
    ]
 
 expr :: IParser (Expr  Name)
-expr = do
-   buildExpressionParser table term
+expr =
+   buildExpressionParser table apExpr
    <?> "expression"
-
+   
+   
+apExpr :: IParser (Expr  Name)
+apExpr = do
+   t <- term
+   ts <- spacePrefix term
+   return $ createEApExpr $ reverse (t:ts) 
+   where
+      createEApExpr :: [Expr Name] -> Expr Name
+      createEApExpr [e] = e
+      createEApExpr (e:es) = EAp (createEApExpr es) e
+      createEApExpr  _ = error "Empty expression encountered."    
+      
 
 literal :: IParser (Expr  Name)
 literal = do
    i <- integer
    return $ ENum $ fromEnum i
+   
+   
+var :: IParser (Expr  Name)
+var = do
+   ident <- identifier
+   return $ EVar ident
+
 
 term :: IParser (Expr  Name)
 term = choice 
    [
+      parens expr,
       literal,
-      braces expr      
+      var
    ]
+
    
 prefix :: String -> IParser (Expr Name -> Expr Name)
 prefix name = do
    reservedOp name
    return (EAp (EVar "neg"))
 
+
+spacePrefix :: IParser a -> IParser [a]
+spacePrefix p = many . try $ do
+   spaces
+   indented
+   p
 
 -----------------------------------------------------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@ import Data.List(foldl')
 
 import Utils
 import Language
-import Grammar(parse)
+import Parser(parse)
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ extraPreludeDefs = []
 
 
 runProg :: String -> [TiState]
-runProg = eval . compile . parse
+runProg = eval . compile . (parse "internal")
 
 
 getResult :: [TiState] -> Int
