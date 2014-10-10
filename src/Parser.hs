@@ -90,7 +90,9 @@ scDefn = do
 table :: [[Operator C.ByteString () (State SourcePos) (Expr Name)]]
 table = 
    [
-      [Prefix (prefix "-")]
+      [Prefix (prefixOp "-")],
+      [Infix (infixOp "*") AssocLeft, Infix (infixOp "/") AssocLeft],
+      [Infix (infixOp "+") AssocLeft, Infix (infixOp "-") AssocLeft]
    ]
 
 expr :: IParser (Expr  Name)
@@ -105,15 +107,17 @@ defExpr = do
    reservedOp "="
    e <- expr
    return (n, e)
+   <?> "let define"
 
 
 letExpr :: IParser (Expr  Name)
 letExpr = do
    reserved "let"  
-   defs <- many1 defExpr 
+   defs <- block defExpr 
    reserved "in"
    e <- expr
    return $ ELet defs e
+   <?> "let expression"
    
    
 apExpr :: IParser (Expr  Name)
@@ -138,6 +142,7 @@ var :: IParser (Expr  Name)
 var = do
    ident <- identifier
    return $ EVar ident
+   <?> "var"
 
 
 term :: IParser (Expr  Name)
@@ -148,12 +153,19 @@ term = choice
       literal,
       var
    ]
+   <?> "term"
 
    
-prefix :: String -> IParser (Expr Name -> Expr Name)
-prefix name = do
+prefixOp :: String -> IParser (Expr Name -> Expr Name)
+prefixOp name = do
    reservedOp name
    return (EAp (EVar "neg"))
+
+
+infixOp :: String -> IParser (Expr Name -> Expr Name -> Expr Name)
+infixOp name = do
+   reservedOp name
+   return $ \e0 e1 -> (EAp (EAp (EVar name) e0) e1) 
 
 
 spacePrefix :: IParser a -> IParser [a]

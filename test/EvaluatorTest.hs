@@ -8,6 +8,7 @@
 module EvaluatorTest where
 
 import Text.RawString.QQ
+import qualified Data.ByteString.Char8 as C
 
 import Evaluator
 import Test.Framework
@@ -39,26 +40,26 @@ prop_simpleMain6 = getResult (runProg "main = neg (I 3)") == -3
 prog0 :: String
 prog0 = [r|
 
-pair x y f = f x y ;
+pair x y f = f x y
 
-fst p = p K ;
+fst p = p K
 
-snd p = p K1 ;
+snd p = p K1
 
 f x y = 
    let
-      a = pair x b ;
-      b = pair y a ;
+      a = pair x b
+      b = pair y a
    in
-      fst (snd (snd (snd a))) ;
+      fst (snd (snd (snd a)))
       
-main = f 3 4 ;
+main = f 3 4
    
 |]
 
 
 prop_prog0 :: Bool
-prop_prog0 = getResult (runProg prog0) == 4
+prop_prog0 = getResult (runProg (C.pack prog0)) == 4
 
 -----------------------------------------------------------------------------------------------------------------------
 
