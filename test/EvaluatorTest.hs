@@ -36,6 +36,9 @@ prop_simpleMain5 = getResult (runProg "main = twice neg 3") == 3
 prop_simpleMain6:: Bool
 prop_simpleMain6 = getResult (runProg "main = neg (I 3)") == -3
 
+prop_add0:: Bool
+prop_add0 = getResult (runProg "main = 1 + 2") == 3
+
 
 prog0 :: String
 prog0 = [r|
@@ -46,15 +49,15 @@ fst p = p K
 
 snd p = p K1
 
-f x y = 
+f x y =
    let
       a = pair x b
       b = pair y a
    in
       fst (snd (snd (snd a)))
-      
+
 main = f 3 4
-   
+
 |]
 
 

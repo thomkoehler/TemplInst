@@ -191,65 +191,75 @@ getArgNodes size state =
          argAddrs = map (\(NAp _ addr) -> addr) $ map (hLookup heap) apAddrs
          argNodes = map (hLookup heap) argAddrs
 
-{--
 
-   let
-      stack = tiStack state
+pushNotDataNodesToDump :: [(Node, Addr, Addr)] -> TiState -> (Bool, TiState)
+pushNotDataNodesToDump argNodes state = foldl' stepFun (False, state) $ filter (\(node, _, _) -> not (isDataNode node)) argNodes
+   where
+      stepFun (_, oldState) (_, argAddr, apAddr) = (True, newState)
+         where
+            newState = oldState { tiStack = [argAddr], tiDump = [apAddr] : tiDump oldState }
+
+
+
+primUnary :: TiState -> (Node -> Node) -> TiState
+primUnary state unaryFun = if notDataNodesFound
+   then newState
+   else state
+      {
+            tiStack = drop 1 stack,
+            tiHeap = hUpdate heap apAddr $ unaryFun argNode
+      }
+   where
       heap = tiHeap state
-   in
-      if length stack <= size
-         then error "Applied to too few arguments"
-         else  map (hLookup heap) $
-               map (\(NAp _ addr) -> addr) $
-               map (hLookup heap) $
-               (take size) $
-               tail stack
+      stack = tiStack state
+      argNodes@[(argNode, _, apAddr)] = getArgNodes 1 state
+      (notDataNodesFound, newState) = pushNotDataNodesToDump argNodes state
 
+
+primBinary :: TiState -> (Node -> Node -> Node) -> TiState
+primBinary state binaryFun = if notDataNodesFound
+   then newState
+   else state
+      {
+            tiStack = drop 2 stack,
+            tiHeap = hUpdate heap apAddr1 $ binaryFun argNode0 argNode1
+      }
+   where
+      heap = tiHeap state
+      stack = tiStack state
+      argNodes@[(argNode0, _, _), (argNode1, _, apAddr1)] = getArgNodes 2 state
+      (notDataNodesFound, newState) = pushNotDataNodesToDump argNodes state
+
+
+{--
+primUnary :: TiState -> (Node -> Node) -> TiState
+primUnary state unaryFun =
+   let
+   heap = tiHeap state
+   stack = tiStack state
+   [(argNode, argAddr, apAddr)] = getArgNodes 1 state
+   in
+      if isDataNode argNode
+         then
+            state
+            {
+               tiStack = drop 1 stack,
+               tiHeap = hUpdate heap apAddr $ unaryFun argNode
+            }
+         else
+            state
+            {
+               tiStack = [argAddr],
+               tiDump =  [apAddr] : tiDump state
+            }
 --}
+
 
 primStep :: TiState -> Name -> Primitive -> TiState
 
+primStep state _ Neg = primUnary state $ \(NNum i) -> (NNum (- i))
+primStep state _ Add = primBinary state $ \(NNum x) (NNum y) -> (NNum (x + y))
 
-primStep state _ Neg =
-   let
-      heap = tiHeap state
-      stack = tiStack state
-      [(argNode, argAddr, apAddr)] = getArgNodes 1 state
-   in
-      case argNode of
-         (NNum n) -> state
-            {
-               tiStack = drop 1 stack,
-               tiHeap = hUpdate heap apAddr $ NNum (- n)
-            }
-         _        -> state
-            {
-               tiStack = [argAddr],
-               tiDump =  [apAddr] : tiDump state
-            }
-
-
-{--
-primStep state _ Neg =
-   let
-      heap = tiHeap state
-      stack = tiStack state
-      (_ : apAddr : _) = stack
-      (NAp _ argAddr) = hLookup heap apAddr
-      argNode = hLookup heap argAddr
-   in
-      case argNode of
-         (NNum n) -> state
-            {
-               tiStack = drop 1 stack,
-               tiHeap = hUpdate heap apAddr $ NNum (- n)
-            }
-         _        -> state
-            {
-               tiStack = [argAddr],
-               tiDump =  [apAddr] : tiDump state
-            }
---}
 
 primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
 

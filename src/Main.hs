@@ -13,6 +13,6 @@ import Evaluator
 
 main :: IO()
 main = do
-   putStrLn $ Pr.ppShow $ runProg "id x = x\nmain = id 5" 
+   putStrLn $ Pr.ppShow $ runProg "main = 1 + 2"
 
 -----------------------------------------------------------------------------------------------------------------------
