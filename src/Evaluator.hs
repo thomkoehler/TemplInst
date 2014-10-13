@@ -6,6 +6,9 @@ module Evaluator(runProg, getResult) where
 import Data.List(foldl')
 import qualified Data.ByteString.Char8 as C
 
+import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
+import Debug.Trace --TODO remove import Debug.Trace 
+
 import Utils
 import Language
 import Parser(parse)
@@ -86,8 +89,11 @@ extraPreludeDefs = []
 
 
 runProg :: C.ByteString -> [TiState]
-runProg = eval . compile . parse "internal"
-
+--TODO runProg = eval . compile . parse "internal"
+runProg text = eval . compile $ trace (Pr.ppShow ast) ast
+   where 
+      ast = parse "internal" text
+  
 
 getResult :: [TiState] -> Int
 getResult states =
@@ -97,8 +103,6 @@ getResult states =
       (NNum res) = hLookup (tiHeap state) addr
    in
       res
-
-
 
 
 compile :: [CoreScDefn] -> TiState
@@ -175,7 +179,7 @@ step state = dispatch $ hLookup (tiHeap state) nodeAddr
 numStep :: TiState -> TiState
 numStep state =
    case tiDump state of
-      []               -> error "Number applied as a function!"
+      []               -> error $ "Number applied as a function!" ++ "\n" ++ Pr.ppShow state 
       (stack' : dump') -> state { tiStack = stack', tiDump = dump' }
 
 
@@ -217,7 +221,7 @@ primUnary state unaryFun = if notDataNodesFound
 
 
 primBinary :: TiState -> (Node -> Node -> Node) -> TiState
-primBinary state binaryFun = if notDataNodesFound
+primBinary state binaryFun = if (traceShow notDataNodesFound notDataNodesFound)
    then newState
    else state
       {

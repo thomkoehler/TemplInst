@@ -8,6 +8,7 @@ import Text.Parsec.Language
 import Text.Parsec.Indent
 import Text.Parsec.Expr
 import Control.Monad.State
+import Debug.Trace --TODO remove import Debug.Trace 
 
 import qualified Data.ByteString.Char8 as C
 
@@ -34,7 +35,7 @@ languageDef = P.LanguageDef
          ],
       P.opStart = P.opLetter languageDef,
       P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~",
-      P.reservedOpNames = ["+", "-"],
+      P.reservedOpNames = ["+", "-", "*", "/"],
       P.caseSensitive  = True
    }
 
@@ -123,8 +124,8 @@ letExpr = do
 apExpr :: IParser (Expr  Name)
 apExpr = do
    t <- term
-   ts <- spacePrefix term
-   return $ createEApExpr $ reverse (t:ts) 
+   ts <- spacePrefix term 
+   return $ createEApExpr $ reverse $ traceShow (t:ts) (t:ts)
    where
       createEApExpr :: [Expr Name] -> Expr Name
       createEApExpr [e] = e
@@ -165,14 +166,16 @@ prefixOp name = do
 infixOp :: String -> IParser (Expr Name -> Expr Name -> Expr Name)
 infixOp name = do
    reservedOp name
-   return $ \e0 e1 -> (EAp (EAp (EVar name) e0) e1) 
+   return infixExpr
+   where
+      infixExpr e0 e1 = (EAp (EAp (EVar name) e0) e1)
 
 
 spacePrefix :: IParser a -> IParser [a]
 spacePrefix p = many . try $ do
    spaces
-   indented
-   p
+   indented 
+   p 
 
 -----------------------------------------------------------------------------------------------------------------------
 

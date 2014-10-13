@@ -30,7 +30,7 @@ simpleMain1 = ScDefn
       scArgs = ["x", "y"],
       scExpr = ENum 1
    }
-
+   
 strLet0 :: String
 strLet0 = [r|
 main = 
@@ -59,7 +59,16 @@ prop_infixOp0 = "main" == head (map scName (parse "infixOp" "main = 1 + 2"))
 prop_infixOp1 :: Bool
 prop_infixOp1 = "main" == head (map scName (parse "infixOp" "main = (1 + 2) * 3"))
 
-
+prop_binOp :: Bool
+prop_binOp = [mainBinOp] == parse "mainBinOp" "main = 1 + 2"
+   where
+      mainBinOp :: ScDefn Name
+      mainBinOp = ScDefn
+         {
+            scName = "main",
+            scArgs = [],
+            scExpr = (EAp (EAp (EVar "+") (ENum 1)) (ENum 2)) 
+         }
 
 -----------------------------------------------------------------------------------------------------------------------
 
