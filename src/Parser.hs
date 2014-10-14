@@ -8,7 +8,6 @@ import Text.Parsec.Language
 import Text.Parsec.Indent
 import Text.Parsec.Expr
 import Control.Monad.State
-import Debug.Trace --TODO remove import Debug.Trace 
 
 import qualified Data.ByteString.Char8 as C
 
@@ -46,8 +45,8 @@ lexer = P.makeTokenParser languageDef
 identifier :: IParser String
 identifier = P.identifier lexer
 
-integer :: IParser Integer
-integer = P.integer lexer 
+natural :: IParser Integer
+natural = P.natural lexer 
 
 parens :: IParser a -> IParser a
 parens = P.parens lexer
@@ -91,7 +90,7 @@ scDefn = do
 table :: [[Operator C.ByteString () (State SourcePos) (Expr Name)]]
 table = 
    [
-      [Prefix (prefixOp "-")],
+      [Prefix (prefixOp "neg")],
       [Infix (infixOp "*") AssocLeft, Infix (infixOp "/") AssocLeft],
       [Infix (infixOp "+") AssocLeft, Infix (infixOp "-") AssocLeft]
    ]
@@ -125,7 +124,7 @@ apExpr :: IParser (Expr  Name)
 apExpr = do
    t <- term
    ts <- spacePrefix term 
-   return $ createEApExpr $ reverse $ traceShow (t:ts) (t:ts)
+   return $ createEApExpr $ reverse (t:ts)
    where
       createEApExpr :: [Expr Name] -> Expr Name
       createEApExpr [e] = e
@@ -135,7 +134,7 @@ apExpr = do
 
 literal :: IParser (Expr  Name)
 literal = do
-   i <- integer
+   i <- natural
    return $ ENum $ fromEnum i
    
    
@@ -160,7 +159,9 @@ term = choice
 prefixOp :: String -> IParser (Expr Name -> Expr Name)
 prefixOp name = do
    reservedOp name
-   return (EAp (EVar "neg"))
+   case name of
+      "neg" -> return (EAp (EVar "neg"))
+      _     -> error "Unknow prefix operator encountered."
 
 
 infixOp :: String -> IParser (Expr Name -> Expr Name -> Expr Name)
@@ -168,7 +169,7 @@ infixOp name = do
    reservedOp name
    return infixExpr
    where
-      infixExpr e0 e1 = (EAp (EAp (EVar name) e0) e1)
+      infixExpr e0 e1 = EAp (EAp (EVar name) e0) e1
 
 
 spacePrefix :: IParser a -> IParser [a]

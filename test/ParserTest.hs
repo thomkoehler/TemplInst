@@ -59,8 +59,8 @@ prop_infixOp0 = "main" == head (map scName (parse "infixOp" "main = 1 + 2"))
 prop_infixOp1 :: Bool
 prop_infixOp1 = "main" == head (map scName (parse "infixOp" "main = (1 + 2) * 3"))
 
-prop_binOp :: Bool
-prop_binOp = [mainBinOp] == parse "mainBinOp" "main = 1 + 2"
+prop_addOp :: Bool
+prop_addOp = [mainBinOp] == parse "mainBinOp" "main = 1 + 2"
    where
       mainBinOp :: ScDefn Name
       mainBinOp = ScDefn
@@ -68,6 +68,18 @@ prop_binOp = [mainBinOp] == parse "mainBinOp" "main = 1 + 2"
             scName = "main",
             scArgs = [],
             scExpr = (EAp (EAp (EVar "+") (ENum 1)) (ENum 2)) 
+         }
+         
+         
+prop_mulOp :: Bool
+prop_mulOp = [mainBinOp] == parse "mainBinOp" "main = 2 * 3"
+   where
+      mainBinOp :: ScDefn Name
+      mainBinOp = ScDefn
+         {
+            scName = "main",
+            scArgs = [],
+            scExpr = (EAp (EAp (EVar "*") (ENum 2)) (ENum 3)) 
          }
 
 -----------------------------------------------------------------------------------------------------------------------

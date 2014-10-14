@@ -6,9 +6,6 @@ module Evaluator(runProg, getResult) where
 import Data.List(foldl')
 import qualified Data.ByteString.Char8 as C
 
-import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
-import Debug.Trace --TODO remove import Debug.Trace 
-
 import Utils
 import Language
 import Parser(parse)
@@ -89,10 +86,8 @@ extraPreludeDefs = []
 
 
 runProg :: C.ByteString -> [TiState]
---TODO runProg = eval . compile . parse "internal"
-runProg text = eval . compile $ trace (Pr.ppShow ast) ast
-   where 
-      ast = parse "internal" text
+runProg = eval . compile . parse "internal"
+
   
 
 getResult :: [TiState] -> Int
@@ -179,7 +174,7 @@ step state = dispatch $ hLookup (tiHeap state) nodeAddr
 numStep :: TiState -> TiState
 numStep state =
    case tiDump state of
-      []               -> error $ "Number applied as a function!" ++ "\n" ++ Pr.ppShow state 
+      []               -> error "Number applied as a function!" 
       (stack' : dump') -> state { tiStack = stack', tiDump = dump' }
 
 
@@ -221,7 +216,7 @@ primUnary state unaryFun = if notDataNodesFound
 
 
 primBinary :: TiState -> (Node -> Node -> Node) -> TiState
-primBinary state binaryFun = if (traceShow notDataNodesFound notDataNodesFound)
+primBinary state binaryFun = if notDataNodesFound
    then newState
    else state
       {
@@ -235,37 +230,14 @@ primBinary state binaryFun = if (traceShow notDataNodesFound notDataNodesFound)
       (notDataNodesFound, newState) = pushNotDataNodesToDump argNodes state
 
 
-{--
-primUnary :: TiState -> (Node -> Node) -> TiState
-primUnary state unaryFun =
-   let
-   heap = tiHeap state
-   stack = tiStack state
-   [(argNode, argAddr, apAddr)] = getArgNodes 1 state
-   in
-      if isDataNode argNode
-         then
-            state
-            {
-               tiStack = drop 1 stack,
-               tiHeap = hUpdate heap apAddr $ unaryFun argNode
-            }
-         else
-            state
-            {
-               tiStack = [argAddr],
-               tiDump =  [apAddr] : tiDump state
-            }
---}
-
-
 primStep :: TiState -> Name -> Primitive -> TiState
 
 primStep state _ Neg = primUnary state $ \(NNum i) -> (NNum (- i))
 primStep state _ Add = primBinary state $ \(NNum x) (NNum y) -> (NNum (x + y))
+primStep state _ Sub = primBinary state $ \(NNum x) (NNum y) -> (NNum (x - y))
+primStep state _ Mul = primBinary state $ \(NNum x) (NNum y) -> (NNum (x * y))
+primStep state _ Div = primBinary state $ \(NNum x) (NNum y) -> (NNum (x `div` y))
 
-
-primStep _ _ _ = undefined --TODO primStep :: TiState -> Name -> Primitive -> TiState
 
 indStep :: TiState -> Addr -> TiState
 indStep state addr = state { tiStack = addr : tail (tiStack state) }
