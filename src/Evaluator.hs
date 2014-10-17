@@ -6,6 +6,9 @@ module Evaluator(runProg, getResult) where
 import Data.List(foldl')
 import qualified Data.ByteString.Char8 as C
 
+import qualified Text.Show.Pretty as Pr  --TODO remove
+import Debug.Trace --TODO remove
+
 import Utils
 import Language
 import Parser(parse)
@@ -143,7 +146,7 @@ primitives =
 eval :: TiState -> [TiState]
 eval state = state : restStates
    where
-      nextState = doAdmin $ step state
+      nextState = doAdmin $ step $ trace (Pr.ppShow state) state
 
       restStates
          | tiFinal state = []
@@ -220,7 +223,7 @@ primBinary state binaryFun = if notDataNodesFound
    then newState
    else state
       {
-            tiStack = drop 2 stack,
+            --TODO tiStack = drop 2 stack,
             tiHeap = hUpdate heap apAddr1 $ binaryFun argNode0 argNode1
       }
    where

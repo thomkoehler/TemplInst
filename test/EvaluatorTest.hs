@@ -36,8 +36,11 @@ prop_simpleMain5 = getResult (runProg "main = twice neg 3") == 3
 prop_simpleMain6:: Bool
 prop_simpleMain6 = getResult (runProg "main = neg (I 3)") == -3
 
-prop_add:: Bool
-prop_add = getResult (runProg "main = 1 + 2") == 3
+prop_add0:: Bool
+prop_add0 = getResult (runProg "main = 1 + 2") == 3
+
+prop_add1:: Bool
+prop_add1 = getResult (runProg "main = let x = 1 + 2 in x + 3") == 6
 
 
 prop_add2:: Bool
