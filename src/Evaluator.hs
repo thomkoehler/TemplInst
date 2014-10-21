@@ -180,20 +180,7 @@ numStep state =
       []               -> error "Number applied as a function!" 
       (stack' : dump') -> state { tiStack = stack', tiDump = dump' }
 
-
-getArgNodes :: Int -> TiState -> [(Node, Addr, Addr)]
-getArgNodes size state =
-   if length stack <= size
-      then error "Applied to too few arguments"
-      else zip3 argNodes argAddrs apAddrs
-   where
-         stack = tiStack state
-         heap = tiHeap state
-         apAddrs = (take size) $ tail stack
-         argAddrs = map (\(NAp _ addr) -> addr) $ map (hLookup heap) apAddrs
-         argNodes = map (hLookup heap) argAddrs
-
-         
+      
 getArgData :: Int -> TiState -> [(Addr, Addr, Addr, Node)]
 getArgData size state = 
    if length stack <= size
@@ -208,11 +195,11 @@ getArgData size state =
       rightNodes = map (hLookup heap) rightAddrs
 
       
-pushNonDataNodeToStack :: [(Node, Addr, Addr)] -> TiState -> (TiState, Bool)
+pushNonDataNodeToStack :: [(Addr, Addr, Addr, Node)] -> TiState -> (TiState, Bool)
 pushNonDataNodeToStack argNodes state = 
-   case filter (\(node, _, _) -> not (isDataNode node)) argNodes of
+   case filter (\(_, _, _, node) -> not (isDataNode node)) argNodes of
       [] -> (state, False)
-      (_, argAddr, _):_ -> (state { tiDump = tiStack state : tiDump state, tiStack = [argAddr] }, True) 
+      (_, _, argAddr, _):_ -> (state { tiDump = tiStack state : tiDump state, tiStack = [argAddr] }, True) 
 
       
 resolveIndirections :: Int -> TiState -> TiState
@@ -222,28 +209,6 @@ resolveIndirections size state = foldl' step state args
       step oldState _ = oldState
       
       args = getArgData size state
-      
-
-pushNotDataNodesToDump :: [(Node, Addr, Addr)] -> TiState -> (Bool, TiState)
-pushNotDataNodesToDump argNodes state = foldl' stepFun (False, state) $ filter (\(node, _, _) -> not (isDataNode node)) argNodes
-   where
-      stepFun (_, oldState) (_, argAddr, apAddr) = (True, newState)
-         where
-            newState = oldState { tiStack = [argAddr], tiDump = [apAddr] : tiDump oldState }
-
-
-{--
-
-Stack       Dump             Heap
- a: a1: []  d                { a: Prim Neg, a1: NAp a b }
-     b: []  (a: a1: []): []
-
-
-Stack           Dump                       Heap
- a: a1: a2: []  d                          { a: Prim Add, a1: NAp a b, a2: NAp a1 c }
-         b: []  (a: a1: a2: []): []
-
---}
 
 
 primUnary :: TiState -> (Node -> Node) -> TiState
@@ -258,7 +223,7 @@ primUnary state unaryFun = if nonDataNodeFound
       state1 = resolveIndirections 1 state
       heap = tiHeap state1
       stack = tiStack state1
-      argNodes@[(argNode, _, apAddr)] = getArgNodes 1 state1
+      argNodes@[(apAddr, _, _, argNode)] = getArgData 1 state1
       (state2, nonDataNodeFound) = pushNonDataNodeToStack argNodes state1
 
 
@@ -274,7 +239,7 @@ primBinary state binaryFun = if nonDataNodesFound
       state1 = resolveIndirections 2 state
       heap = tiHeap state1
       stack = tiStack state1
-      argNodes@[(argNode0, _, _), (argNode1, _, apAddr1)] = getArgNodes 2 state1
+      argNodes@[(_, _, _, argNode0), (apAddr1, _, _, argNode1)] = getArgData 2 state1
       (state2, nonDataNodesFound) = pushNonDataNodeToStack argNodes state1
 
 
