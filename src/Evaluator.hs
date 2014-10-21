@@ -6,9 +6,6 @@ module Evaluator(runProg, getResult) where
 import Data.List(foldl', zip4)
 import qualified Data.ByteString.Char8 as C
 
-import qualified Text.Show.Pretty as Pr  --TODO remove
-import Debug.Trace --TODO remove
-
 import Utils
 import Language
 import Parser(parse)
@@ -146,7 +143,7 @@ primitives =
 eval :: TiState -> [TiState]
 eval state = state : restStates
    where
-      nextState = doAdmin $ step $ trace (Pr.ppShow state) state
+      nextState = doAdmin $ step state
 
       restStates
          | tiFinal state = []
@@ -189,9 +186,9 @@ getArgData size state =
    where
       stack = tiStack state
       heap = tiHeap state
-      apAddrs = (take size) $ tail stack
-      leftAddrs = map (\(NAp addr _) -> addr) $ map (hLookup heap) apAddrs
-      rightAddrs = map (\(NAp _ addr) -> addr) $ map (hLookup heap) apAddrs
+      apAddrs = take size $ tail stack
+      leftAddrs = map ((\ (NAp addr _) -> addr) . hLookup heap) apAddrs
+      rightAddrs = map ((\ (NAp _ addr) -> addr) . hLookup heap) apAddrs
       rightNodes = map (hLookup heap) rightAddrs
 
       
