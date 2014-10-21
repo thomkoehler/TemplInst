@@ -38,6 +38,7 @@ data Node
    | NNum Int
    | NInd Addr
    | NPrim Name Primitive
+   | NData Int [Addr]
    deriving Show
 
 
@@ -47,6 +48,7 @@ data Primitive
    | Sub
    | Mul
    | Div
+   | PrimConstr Int Int
    deriving Show
 
 
@@ -247,6 +249,15 @@ primStep state _ Add = primBinary state $ \(NNum x) (NNum y) -> (NNum (x + y))
 primStep state _ Sub = primBinary state $ \(NNum x) (NNum y) -> (NNum (x - y))
 primStep state _ Mul = primBinary state $ \(NNum x) (NNum y) -> (NNum (x * y))
 primStep state _ Div = primBinary state $ \(NNum x) (NNum y) -> (NNum (x `div` y))
+
+primStep state _ (PrimConstr tag size) = state
+   {
+      tiStack = drop size $ stack,
+      tiHeap = hUpdate (tiHeap state) (head stack) $ NData tag args
+   }
+   where
+      stack = tiStack state
+      args = map (\(_, _, argAddr, _) -> argAddr) $ getArgData size state
 
 
 indStep :: TiState -> Addr -> TiState
