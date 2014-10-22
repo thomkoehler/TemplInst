@@ -12,6 +12,9 @@ import Parser(parse)
 
 -----------------------------------------------------------------------------------------------------------------------
 
+gcHeapSize :: Int
+gcHeapSize = 0
+
 type TiStack = [Addr]
 type TiHeap = Heap Node
 type TiGlobals = ASSOC Name Addr
@@ -39,6 +42,7 @@ data Node
    | NInd Addr
    | NPrim Name Primitive
    | NData Int [Addr]
+   | NMarked Node
    deriving Show
 
 
@@ -153,7 +157,7 @@ eval state = state : restStates
 
 
 doAdmin :: TiState -> TiState
-doAdmin = id --TODO diAdmin
+doAdmin = gc
 
 
 tiFinal :: TiState -> Bool
@@ -252,7 +256,7 @@ primStep state _ Div = primBinary state $ \(NNum x) (NNum y) -> (NNum (x `div` y
 
 primStep state _ (PrimConstr tag size) = state
    {
-      tiStack = drop size $ stack,
+      tiStack = drop size stack,
       tiHeap = hUpdate (tiHeap state) (head stack) $ NData tag args
    }
    where
@@ -339,4 +343,65 @@ instantiateAndUpdate (ELet defs body) updAddr heap env = instantiateAndUpdate bo
          in
             (h', aInsert name addr e)
 
+            
+findStackRoots :: TiStack -> [Addr]
+findStackRoots = id
+
+findDumpRoots :: TiDump -> [Addr]
+findDumpRoots = concat . map findStackRoots
+
+findGlobalRoots :: TiGlobals -> [Addr]
+findGlobalRoots = aRange
+
+findRoots :: TiState -> [Addr]
+findRoots state = findDumpRoots (tiDump state) ++ findGlobalRoots (tiGlobals state)
+
+markFrom :: TiHeap -> Addr -> TiHeap
+markFrom heap addr = 
+   let
+      node = hLookup heap addr
+   in
+      case hLookup heap addr of
+         NMarked _ -> heap
+         
+         NAp addr0 addr1 -> 
+            let
+               heap1 = markFrom heap addr0
+               heap2 = markFrom heap1 addr1
+            in
+               hUpdate heap2 addr $ NMarked node
+               
+         NInd addr0 -> 
+            let
+               heap1 = markFrom heap addr0
+            in
+               hUpdate heap1 addr $ NMarked node
+               
+         NData tag addrs ->
+            let
+               heap1 = foldl' markFrom heap addrs
+            in
+               hUpdate heap1 addr $ NMarked $ NMarked node
+               
+         _ -> hUpdate heap addr $ NMarked node
+            
+            
+scanHeap :: TiHeap -> TiHeap
+scanHeap heap = foldl' step heap (hAdresses heap)
+   where
+      step heap addr = 
+         case hLookup heap addr of
+            NMarked node -> hUpdate heap addr node
+            
+            _ -> hFree heap addr
+      
+      
+gc :: TiState -> TiState
+gc state = if hSize heap > gcHeapSize
+   then state { tiHeap = scanHeap heap1 }
+   else state
+   where
+      heap = tiHeap state
+      heap1 = foldl' markFrom heap $ findRoots state
+            
 -----------------------------------------------------------------------------------------------------------------------
