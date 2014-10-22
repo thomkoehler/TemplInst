@@ -388,6 +388,22 @@ markFrom heap addr =
          _ -> (hUpdate heap addr $ NMarked node, addr)
             
             
+markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)
+markFromStack heap stack = foldl' step (heap, []) stack
+   where
+      step (heapBefore, newStack) addr = (heapAfter, newStack ++ [addrAfter])
+         where
+            (heapAfter, addrAfter) = markFrom heap addr
+
+            
+markFromDump :: TiHeap -> TiDump -> (TiHeap, TiDump)
+markFromDump heap dump = foldl' step (heap, []) dump
+   where
+      step (heapBefore, newDump) stack = (heapAfter, newDump ++ [stackAfter])
+         where
+            (heapAfter, stackAfter) = markFromStack heapBefore stack
+            
+            
 scanHeap :: TiHeap -> TiHeap
 scanHeap heap = foldl' step heap (hAdresses heap)
    where
