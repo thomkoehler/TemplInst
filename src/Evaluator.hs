@@ -356,34 +356,36 @@ findGlobalRoots = aRange
 findRoots :: TiState -> [Addr]
 findRoots state = findDumpRoots (tiDump state) ++ findGlobalRoots (tiGlobals state)
 
-markFrom :: TiHeap -> Addr -> TiHeap
+markFrom :: TiHeap -> Addr -> (TiHeap, Addr)
 markFrom heap addr = 
    let
       node = hLookup heap addr
    in
       case hLookup heap addr of
-         NMarked _ -> heap
+         NMarked _ -> (heap, addr)
          
-         NAp addr0 addr1 -> 
+         NAp addrLeft addrRight -> 
             let
-               heap1 = markFrom heap addr0
-               heap2 = markFrom heap1 addr1
+               (heap1, addrLeft1) = markFrom heap addrLeft
+               (heap2, addrRight1) = markFrom heap1 addrRight
             in
-               hUpdate heap2 addr $ NMarked node
+               (hUpdate heap2 addr (NMarked (NAp addrLeft1 addrRight1)), addr)
                
-         NInd addr0 -> 
-            let
-               heap1 = markFrom heap addr0
-            in
-               hUpdate heap1 addr $ NMarked node
+         NInd addr0 -> markFrom heap addr0
                
          NData tag addrs ->
             let
-               heap1 = foldl' markFrom heap addrs
-            in
-               hUpdate heap1 addr $ NMarked $ NMarked node
+               (heapAfter, addrsAfter) = foldl' step (heap, []) addrs
                
-         _ -> hUpdate heap addr $ NMarked node
+               step :: (TiHeap, [Addr]) -> Addr -> (TiHeap, [Addr])
+               step (heap, addrs) addr = (heap', addrs ++ [addr'])
+                  where
+                     (heap', addr') = markFrom heap addr
+               
+            in
+               (hUpdate heapAfter addr (NMarked (NData tag addrsAfter)), addr)
+               
+         _ -> (hUpdate heap addr $ NMarked node, addr)
             
             
 scanHeap :: TiHeap -> TiHeap
