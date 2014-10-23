@@ -372,16 +372,12 @@ markFrom heap addr =
                (hUpdate heap2 addr (NMarked (NAp addrLeft1 addrRight1)), addr)
                
          NInd addr0 -> markFrom heap addr0
-               
+
+--TODO foldl' to => mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
+         
          NData tag addrs ->
             let
-               (heapAfter, addrsAfter) = foldl' step (heap, []) addrs
-               
-               step :: (TiHeap, [Addr]) -> Addr -> (TiHeap, [Addr])
-               step (heap, addrs) addr = (heap', addrs ++ [addr'])
-                  where
-                     (heap', addr') = markFrom heap addr
-               
+               (heapAfter, addrsAfter) = mapAccumL markFrom heap addrs
             in
                (hUpdate heapAfter addr (NMarked (NData tag addrsAfter)), addr)
                
@@ -389,24 +385,12 @@ markFrom heap addr =
             
             
 markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)
-markFromStack heap stack = foldl' step (heap, []) stack
-   where
-      step (heapBefore, newStack) addr = (heapAfter, newStack ++ [addrAfter])
-         where
-            (heapAfter, addrAfter) = markFrom heap addr
+markFromStack heap stack = mapAccumL markFrom heap stack
 
             
 markFromDump :: TiHeap -> TiDump -> (TiHeap, TiDump)
-markFromDump heap dump = foldl' step (heap, []) dump
-   where
-      step (heapBefore, newDump) stack = (heapAfter, newDump ++ [stackAfter])
-         where
-            (heapAfter, stackAfter) = markFromStack heapBefore stack
-   
-   
-   
---TODO foldl' to => mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
-   
+markFromDump heap dump = mapAccumL markFromStack heap dump
+  
    
 markFromGlobals :: TiHeap -> TiGlobals -> (TiHeap,TiGlobals)
 markFromGlobals heap globals = 
@@ -429,11 +413,12 @@ scanHeap heap = foldl' step heap (hAdresses heap)
       
       
 gc :: TiState -> TiState
-gc state = if hSize heap > gcHeapSize
-   then state { tiHeap = scanHeap heap1 }
-   else state
-   where
-      heap = tiHeap state
-      heap1 = foldl' markFrom heap $ findRoots state
-            
+gc state = 
+   let
+      (heap1, dump1) = markFromDump (tiHeap state) $ tiDump state
+      (heap2, globals1) = markFromGlobals heap1 $ tiGlobals state
+      heap3 = scanHeap heap2
+   in
+      state { tiHeap = heap3, tiGlobals = globals1, tiDump = dump1 }
+
 -----------------------------------------------------------------------------------------------------------------------
