@@ -80,5 +80,10 @@ aInsertList kxs m = foldl' step m kxs
    where 
       step m0 (k, x) = aInsert k x m0 
       
+aToList :: ASSOC k x -> [(k, x)]
+aToList = Map.toList
+
+aFromList :: Ord k => [(k, x)] -> ASSOC k x
+aFromList = Map.fromList
 
 -----------------------------------------------------------------------------------------------------------------------

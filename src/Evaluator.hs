@@ -3,7 +3,7 @@
 
 module Evaluator(runProg, getResult) where
 
-import Data.List(foldl', zip4)
+import Data.List(foldl', zip4, mapAccumL)
 import qualified Data.ByteString.Char8 as C
 
 import Utils
@@ -402,6 +402,20 @@ markFromDump heap dump = foldl' step (heap, []) dump
       step (heapBefore, newDump) stack = (heapAfter, newDump ++ [stackAfter])
          where
             (heapAfter, stackAfter) = markFromStack heapBefore stack
+   
+   
+   
+--TODO foldl' to => mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
+   
+   
+markFromGlobals :: TiHeap -> TiGlobals -> (TiHeap,TiGlobals)
+markFromGlobals heap globals = 
+   let
+      (names, addrs) = unzip $ aToList globals
+      (heap', addrs') = mapAccumL markFrom heap addrs
+   in
+      (heap', aFromList (zip names addrs'))
+      
             
             
 scanHeap :: TiHeap -> TiHeap
