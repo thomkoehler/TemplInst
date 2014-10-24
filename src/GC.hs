@@ -37,11 +37,11 @@ markFrom heap addr =
 
 
 markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)
-markFromStack heap stack = mapAccumL markFrom heap stack
+markFromStack = mapAccumL markFrom
 
 
 markFromDump :: TiHeap -> TiDump -> (TiHeap, TiDump)
-markFromDump heap dump = mapAccumL markFromStack heap dump
+markFromDump = mapAccumL markFromStack
 
 
 markFromGlobals :: TiHeap -> TiGlobals -> (TiHeap,TiGlobals)

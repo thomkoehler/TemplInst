@@ -15,25 +15,25 @@ import Language
 
 -----------------------------------------------------------------------------------------------------------------------
 
-simpleMain0 :: ScDefn Name 
+simpleMain0 :: ScDefn Name
 simpleMain0 = ScDefn
    {
       scName = "main",
       scArgs = [],
       scExpr = ENum 1
    }
-   
-simpleMain1 :: ScDefn Name 
+
+simpleMain1 :: ScDefn Name
 simpleMain1 = ScDefn
    {
       scName = "main",
       scArgs = ["x", "y"],
       scExpr = ENum 1
    }
-   
+
 strLet0 :: String
 strLet0 = [r|
-main = 
+main =
    let
       x = 1
    in
@@ -67,10 +67,10 @@ prop_addOp = [mainBinOp] == parse "mainBinOp" "main = 1 + 2"
          {
             scName = "main",
             scArgs = [],
-            scExpr = (EAp (EAp (EVar "+") (ENum 1)) (ENum 2)) 
+            scExpr = EAp (EAp (EVar "+") (ENum 1)) (ENum 2)
          }
-         
-         
+
+
 prop_mulOp :: Bool
 prop_mulOp = [mainBinOp] == parse "mainBinOp" "main = 2 * 3"
    where
@@ -79,7 +79,7 @@ prop_mulOp = [mainBinOp] == parse "mainBinOp" "main = 2 * 3"
          {
             scName = "main",
             scArgs = [],
-            scExpr = (EAp (EAp (EVar "*") (ENum 2)) (ENum 3)) 
+            scExpr = EAp (EAp (EVar "*") (ENum 2)) (ENum 3)
          }
 
 -----------------------------------------------------------------------------------------------------------------------
