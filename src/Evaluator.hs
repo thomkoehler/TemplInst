@@ -10,6 +10,9 @@ import Utils
 import Language
 import Parser(parse)
 
+import Debug.Trace --TODO remove import Debug.Trace
+import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
+
 -----------------------------------------------------------------------------------------------------------------------
 
 gcHeapSize :: Int
@@ -95,7 +98,6 @@ runProg :: C.ByteString -> [TiState]
 runProg = eval . compile . parse "internal"
 
   
-
 getResult :: [TiState] -> Int
 getResult states =
    let
@@ -127,6 +129,7 @@ buildInitialHeap = foldl' stepFun (hInitial, aEmpty)
          in
             (heap2, env2)
 
+            
 allocatePrim :: TiHeap -> TiGlobals -> [(Name, Primitive)] -> (TiHeap, TiGlobals)
 allocatePrim heap env = foldl' stepFun (heap, env)
    where
@@ -150,6 +153,7 @@ eval :: TiState -> [TiState]
 eval state = state : restStates
    where
       nextState = doAdmin $ step state
+      --TODO nextState = doAdmin $ step (trace (Pr.ppShow state) state) 
 
       restStates
          | tiFinal state = []
@@ -361,7 +365,7 @@ markFrom heap addr =
    let
       node = hLookup heap addr
    in
-      case hLookup heap addr of
+      case node of
          NMarked _ -> (heap, addr)
          
          NAp addrLeft addrRight -> 
@@ -373,8 +377,6 @@ markFrom heap addr =
                
          NInd addr0 -> markFrom heap addr0
 
---TODO foldl' to => mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
-         
          NData tag addrs ->
             let
                (heapAfter, addrsAfter) = mapAccumL markFrom heap addrs
@@ -415,10 +417,11 @@ scanHeap heap = foldl' step heap (hAdresses heap)
 gc :: TiState -> TiState
 gc state = 
    let
-      (heap1, dump1) = markFromDump (tiHeap state) $ tiDump state
-      (heap2, globals1) = markFromGlobals heap1 $ tiGlobals state
-      heap3 = scanHeap heap2
+      (heap1, stack1) = markFromStack (tiHeap state) $ tiStack state
+      (heap2, dump1) = markFromDump heap1 $ tiDump state
+      (heap3, globals1) = markFromGlobals heap2 $ tiGlobals state
+      heap4 = scanHeap heap3
    in
-      state { tiHeap = heap3, tiGlobals = globals1, tiDump = dump1 }
+      state { tiHeap = heap4, tiGlobals = globals1, tiDump = dump1, tiStack = stack1 }
 
 -----------------------------------------------------------------------------------------------------------------------
