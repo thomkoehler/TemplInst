@@ -6,29 +6,22 @@ license: AllRightsReserved
 license-file: ""
 author: Koehler
 data-dir: ""
-
+ 
 executable TemplInst
     build-depends: base >=4, containers -any, pretty-show -any,
                    array -any, indents -any, parsec >=3, mtl -any, bytestring -any
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
-    other-modules: 
-                   Evaluator,
-                   Parser,
-                   Utils,
-                   Language
+    other-modules: Evaluator GC Parser TemplInst Utils Language
     ghc-options: -Wall -rtsopts -O2
-
+ 
 test-suite Test
     build-depends: base >=4, HTF >0.9, raw-strings-qq -any
     type: exitcode-stdio-1.0
     main-is: Test.hs
     buildable: True
     hs-source-dirs: test src
-    other-modules: 
-                   Evaluator,
-                   EvaluatorTest,
-                   ParserTest
+    other-modules: Evaluator EvaluatorTest ParserTest
     ghc-options: -Wall -rtsopts
-
+ 

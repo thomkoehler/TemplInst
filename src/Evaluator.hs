@@ -3,12 +3,14 @@
 
 module Evaluator(runProg, getResult) where
 
-import Data.List(foldl', zip4, mapAccumL)
+import Data.List(foldl', zip4)
 import qualified Data.ByteString.Char8 as C
 
+import TemplInst
 import Utils
 import Language
 import Parser(parse)
+import GC(gc)
 
 import Debug.Trace --TODO remove import Debug.Trace
 import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
@@ -18,54 +20,6 @@ import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show
 gcHeapSize :: Int
 gcHeapSize = 0
 
-type TiStack = [Addr]
-type TiHeap = Heap Node
-type TiGlobals = ASSOC Name Addr
-type TiDump = [TiStack]
-
-
-data TiStats = TiStats deriving Show --TODO TiStats
-
-
-data TiState = TiState
-   {
-      tiStack :: TiStack,
-      tiHeap :: TiHeap,
-      tiGlobals :: TiGlobals,
-      tiDump :: TiDump,
-      tiStats :: TiStats
-   }
-   deriving Show
-
-
-data Node
-   = NAp Addr Addr
-   | NSupercomb Name [Name] CoreExpr
-   | NNum Int
-   | NInd Addr
-   | NPrim Name Primitive
-   | NData Int [Addr]
-   | NMarked Node
-   deriving Show
-
-
-data Primitive
-   = Neg
-   | Add
-   | Sub
-   | Mul
-   | Div
-   | PrimConstr Int Int
-   deriving Show
-
-
-isDataNode :: Node -> Bool
-isDataNode (NNum _) = True
-isDataNode  _ = False
-
-isIndNode :: Node -> Bool
-isIndNode (NInd _ ) = True
-isIndNode _ = False
 
 {--
 
@@ -97,7 +51,7 @@ extraPreludeDefs = []
 runProg :: C.ByteString -> [TiState]
 runProg = eval . compile . parse "internal"
 
-  
+
 getResult :: [TiState] -> Int
 getResult states =
    let
@@ -129,7 +83,7 @@ buildInitialHeap = foldl' stepFun (hInitial, aEmpty)
          in
             (heap2, env2)
 
-            
+
 allocatePrim :: TiHeap -> TiGlobals -> [(Name, Primitive)] -> (TiHeap, TiGlobals)
 allocatePrim heap env = foldl' stepFun (heap, env)
    where
@@ -153,7 +107,7 @@ eval :: TiState -> [TiState]
 eval state = state : restStates
    where
       nextState = doAdmin $ step state
-      --TODO nextState = doAdmin $ step (trace (Pr.ppShow state) state) 
+      --TODO nextState = doAdmin $ step (trace (Pr.ppShow state) state)
 
       restStates
          | tiFinal state = []
@@ -184,12 +138,12 @@ step state = dispatch $ hLookup (tiHeap state) nodeAddr
 numStep :: TiState -> TiState
 numStep state =
    case tiDump state of
-      []               -> error "Number applied as a function!" 
+      []               -> error "Number applied as a function!"
       (stack' : dump') -> state { tiStack = stack', tiDump = dump' }
 
-      
+
 getArgData :: Int -> TiState -> [(Addr, Addr, Addr, Node)]
-getArgData size state = 
+getArgData size state =
    if length stack <= size
       then error "Applied to too few arguments"
       else zip4 apAddrs leftAddrs rightAddrs rightNodes
@@ -201,20 +155,20 @@ getArgData size state =
       rightAddrs = map ((\ (NAp _ addr) -> addr) . hLookup heap) apAddrs
       rightNodes = map (hLookup heap) rightAddrs
 
-      
+
 pushNonDataNodeToStack :: [(Addr, Addr, Addr, Node)] -> TiState -> (TiState, Bool)
-pushNonDataNodeToStack argNodes state = 
+pushNonDataNodeToStack argNodes state =
    case filter (\(_, _, _, node) -> not (isDataNode node)) argNodes of
       [] -> (state, False)
-      (_, _, argAddr, _):_ -> (state { tiDump = tiStack state : tiDump state, tiStack = [argAddr] }, True) 
+      (_, _, argAddr, _):_ -> (state { tiDump = tiStack state : tiDump state, tiStack = [argAddr] }, True)
 
-      
+
 resolveIndirections :: Int -> TiState -> TiState
 resolveIndirections size state = foldl' step state args
    where
       step oldState (apAddr, leftAddr, rightAddr, NInd addr) = oldState { tiHeap = hUpdate (tiHeap oldState) apAddr (NAp leftAddr addr) }
       step oldState _ = oldState
-      
+
       args = getArgData size state
 
 
@@ -346,82 +300,5 @@ instantiateAndUpdate (ELet defs body) updAddr heap env = instantiateAndUpdate bo
             (h', addr) = instantiate expr h env1
          in
             (h', aInsert name addr e)
-
-            
-findStackRoots :: TiStack -> [Addr]
-findStackRoots = id
-
-findDumpRoots :: TiDump -> [Addr]
-findDumpRoots = concat . map findStackRoots
-
-findGlobalRoots :: TiGlobals -> [Addr]
-findGlobalRoots = aRange
-
-findRoots :: TiState -> [Addr]
-findRoots state = findDumpRoots (tiDump state) ++ findGlobalRoots (tiGlobals state)
-
-markFrom :: TiHeap -> Addr -> (TiHeap, Addr)
-markFrom heap addr = 
-   let
-      node = hLookup heap addr
-   in
-      case node of
-         NMarked _ -> (heap, addr)
-         
-         NAp addrLeft addrRight -> 
-            let
-               (heap1, addrLeft1) = markFrom heap addrLeft
-               (heap2, addrRight1) = markFrom heap1 addrRight
-            in
-               (hUpdate heap2 addr (NMarked (NAp addrLeft1 addrRight1)), addr)
-               
-         NInd addr0 -> markFrom heap addr0
-
-         NData tag addrs ->
-            let
-               (heapAfter, addrsAfter) = mapAccumL markFrom heap addrs
-            in
-               (hUpdate heapAfter addr (NMarked (NData tag addrsAfter)), addr)
-               
-         _ -> (hUpdate heap addr $ NMarked node, addr)
-            
-            
-markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)
-markFromStack heap stack = mapAccumL markFrom heap stack
-
-            
-markFromDump :: TiHeap -> TiDump -> (TiHeap, TiDump)
-markFromDump heap dump = mapAccumL markFromStack heap dump
-  
-   
-markFromGlobals :: TiHeap -> TiGlobals -> (TiHeap,TiGlobals)
-markFromGlobals heap globals = 
-   let
-      (names, addrs) = unzip $ aToList globals
-      (heap', addrs') = mapAccumL markFrom heap addrs
-   in
-      (heap', aFromList (zip names addrs'))
-      
-            
-            
-scanHeap :: TiHeap -> TiHeap
-scanHeap heap = foldl' step heap (hAdresses heap)
-   where
-      step heap addr = 
-         case hLookup heap addr of
-            NMarked node -> hUpdate heap addr node
-            
-            _ -> hFree heap addr
-      
-      
-gc :: TiState -> TiState
-gc state = 
-   let
-      (heap1, stack1) = markFromStack (tiHeap state) $ tiStack state
-      (heap2, dump1) = markFromDump heap1 $ tiDump state
-      (heap3, globals1) = markFromGlobals heap2 $ tiGlobals state
-      heap4 = scanHeap heap3
-   in
-      state { tiHeap = heap4, tiGlobals = globals1, tiDump = dump1, tiStack = stack1 }
 
 -----------------------------------------------------------------------------------------------------------------------
