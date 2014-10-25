@@ -10,6 +10,9 @@ import Utils
 
 -----------------------------------------------------------------------------------------------------------------------
 
+gcHeapSize :: Int
+gcHeapSize = 0
+
 markFrom :: TiHeap -> Addr -> (TiHeap, Addr)
 markFrom heap addr =
    let

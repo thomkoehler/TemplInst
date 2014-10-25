@@ -1,6 +1,11 @@
 -----------------------------------------------------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Language where
+
+import Data.Typeable
+import Data.Data
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -13,9 +18,9 @@ data Expr a
    | ELet [(a, Expr a)] (Expr a)
    | ECase (Expr a) [Alter a]
    | ELam [a] (Expr a)
-   deriving (Show, Eq)
+   deriving (Show, Eq, Typeable, Data)
 
-   
+
 type Name = String
 
 type Alter a = (Int, [a], Expr a)
@@ -30,7 +35,7 @@ data ScDefn a = ScDefn
       scArgs :: [a],
       scExpr :: Expr a
    }
-   deriving (Show, Eq)
+   deriving (Show, Eq, Typeable, Data)
 
 type CoreScDefn = ScDefn  Name
 
