@@ -58,7 +58,7 @@ markFromGlobals heap globals =
 
 
 scanHeap :: TiHeap -> TiHeap
-scanHeap heap = foldl' step heap (hAdresses heap)
+scanHeap tih = foldl' step tih (hAdresses tih)
    where
       step heap addr =
          case hLookup heap addr of
@@ -70,12 +70,15 @@ scanHeap heap = foldl' step heap (hAdresses heap)
 gc :: TiState -> TiState
 gc state =
    let
-      (heap1, stack1) = markFromStack (tiHeap state) $ tiStack state
+      heap = tiHeap state
+      (heap1, stack1) = markFromStack heap $ tiStack state
       (heap2, dump1) = markFromDump heap1 $ tiDump state
       (heap3, globals1) = markFromGlobals heap2 $ tiGlobals state
       heap4 = scanHeap heap3
    in
-      state { tiHeap = heap4, tiGlobals = globals1, tiDump = dump1, tiStack = stack1 }
+      if hSize heap > gcHeapSize
+         then state { tiHeap = heap4, tiGlobals = globals1, tiDump = dump1, tiStack = stack1 }
+         else state
 
 -----------------------------------------------------------------------------------------------------------------------
 

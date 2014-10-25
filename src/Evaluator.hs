@@ -122,6 +122,7 @@ step state = dispatch $ hLookup (tiHeap state) nodeAddr
       dispatch (NSupercomb _ argNames body) = scStep state argNames body
       dispatch (NInd addr) = indStep state addr
       dispatch (NPrim name prim) = primStep state name prim
+      dispatch (NMarked _) = error "Marked node can't be dispatched."
 
 
 numStep :: TiState -> TiState
@@ -153,10 +154,10 @@ pushNonDataNodeToStack argNodes state =
 
 
 resolveIndirections :: Int -> TiState -> TiState
-resolveIndirections size state = foldl' step state args
+resolveIndirections size state = foldl' stepFun state args
    where
-      step oldState (apAddr, leftAddr, rightAddr, NInd addr) = oldState { tiHeap = hUpdate (tiHeap oldState) apAddr (NAp leftAddr addr) }
-      step oldState _ = oldState
+      stepFun oldState (apAddr, leftAddr, _, NInd addr) = oldState { tiHeap = hUpdate (tiHeap oldState) apAddr (NAp leftAddr addr) }
+      stepFun oldState _ = oldState
 
       args = getArgData size state
 
@@ -237,7 +238,7 @@ scStep state argNames body = state
 
 saveDrop :: Int -> [a] -> [a]
 saveDrop size lst = if size > length lst
-   then error "Applied to too few arguments"
+   then error "Applied to too few arguments."
    else drop size lst
 
 
@@ -247,6 +248,8 @@ getArgs  heap (_ : stack) = map getArg stack
       getArg addr = arg
          where
             (NAp _ arg) = hLookup heap addr
+
+getArgs _ _ = error "Arguments not found because stack is empty."
 
 
 
@@ -263,11 +266,13 @@ instantiate (EVar name) heap env = (heap, aLookup env name (error ("Undefined na
 instantiate (ELet defs body) heap env = instantiate body heap' env'
    where
       (heap', env') = foldl' stepFun (heap, env) defs
-      stepFun (h, e) (name, expr) =
+      stepFun (h, e) (name, expression) =
          let
-            (h', addr) = instantiate expr h env'
+            (h', addr) = instantiate expression h env'
          in
             (h', aInsert name addr e)
+
+instantiate _ _ _ = error "Instantiate is not implemented yet."
 
 instantiateAndUpdate :: CoreExpr -> Addr -> TiHeap -> ASSOC Name Addr -> TiHeap
 instantiateAndUpdate (EAp e1 e2) updAddr heap env = hUpdate heap2 updAddr (NAp addr1 addr2)
@@ -284,10 +289,12 @@ instantiateAndUpdate (ENum n) updAddr heap _ = hUpdate heap updAddr $ NNum n
 instantiateAndUpdate (ELet defs body) updAddr heap env = instantiateAndUpdate body updAddr heap1 env1
    where
       (heap1, env1) = foldl' stepFun (heap, env) defs
-      stepFun (h, e) (name, expr) =
+      stepFun (h, e) (name, expression) =
          let
-            (h', addr) = instantiate expr h env1
+            (h', addr) = instantiate expression h env1
          in
             (h', aInsert name addr e)
+
+instantiateAndUpdate _ _ _ _ = error "InstantiateAndUpdate is not implemented yet."
 
 -----------------------------------------------------------------------------------------------------------------------

@@ -15,19 +15,24 @@ expr :: QuasiQuoter
 expr = QuasiQuoter
    {
       quoteExp = quoteExprExp,
-      quotePat = undefined,
+      quotePat = quoteExprPat,
       quoteType = undefined,
       quoteDec = undefined
    }
 
 
+quoteExprExp :: String -> TH.Q TH.Exp
 quoteExprExp str =  do
    loc <- TH.location
-   let
-      pos =  (TH.loc_filename loc,fst (TH.loc_start loc), snd (TH.loc_start loc))
-      expr = parse (TH.loc_filename loc) $ C.pack str
+   let e = parse (TH.loc_filename loc) $ C.pack str
+   dataToExpQ (const Nothing) e
 
-   dataToExpQ (const Nothing) expr
+
+quoteExprPat :: String -> TH.Q TH.Pat
+quoteExprPat str =  do
+   loc <- TH.location
+   let e = parse (TH.loc_filename loc) $ C.pack str
+   dataToPatQ (const Nothing) e
 
 -----------------------------------------------------------------------------------------------------------------------
 
