@@ -122,7 +122,7 @@ step state = dispatch $ hLookup (tiHeap state) nodeAddr
       dispatch (NSupercomb _ argNames body) = scStep state argNames body
       dispatch (NInd addr) = indStep state addr
       dispatch (NPrim name prim) = primStep state name prim
-      dispatch (NMarked _) = error "Marked node can't be dispatched."
+      dispatch (NMarked _ _) = error "Marked node can't be dispatched."
 
 
 numStep :: TiState -> TiState

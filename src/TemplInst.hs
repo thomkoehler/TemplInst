@@ -35,7 +35,13 @@ data Node
    | NInd Addr
    | NPrim Name Primitive
    | NData Int [Addr]
-   | NMarked Node
+   | NMarked MarkState Node
+   deriving Show
+
+   
+data MarkState 
+   = Done
+   | Visit Int
    deriving Show
 
 
