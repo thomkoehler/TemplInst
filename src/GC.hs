@@ -14,7 +14,7 @@ gcHeapSize :: Int
 gcHeapSize = 0
 
 markFrom :: TiHeap -> Addr -> (TiHeap, Addr)
-markFrom heap addr = go addr hNull heap
+markFrom h a = go a 0 h
    where
       go fAddr bAddr heap =
          let
@@ -22,53 +22,26 @@ markFrom heap addr = go addr hNull heap
             bNode = hLookup heap bAddr
          in
             case (fNode, bAddr, bNode) of
-               (NMarked Done _, hNull, _) -> (heap, fAddr)
-               
+               (NMarked Done _, 0, _) -> (heap, fAddr)
+
                (NAp addr1 addr2, _, _) -> go addr1 fAddr $ hUpdate heap fAddr $ NMarked (Visit 1) (NAp bAddr addr2)
-               
+
                (NPrim _ _, _, _) -> go fAddr bAddr $ hUpdate heap fAddr $ NMarked Done fNode
-               
+
                (NNum _, _, _) -> go fAddr bAddr $ hUpdate heap fAddr $ NMarked Done fNode
-               
-               (NSupercomb _ _ _, _, _) -> go fAddr bAddr $ hUpdate heap fAddr $ NMarked Done fNode
-               
-               (NMarked Done node, _, NMarked (Visit 1) (NAp b' addr2)) -> 
+
+               (NSupercomb{}, _, _) -> go fAddr bAddr $ hUpdate heap fAddr $ NMarked Done fNode
+
+               (NMarked Done _, _, NMarked (Visit 1) (NAp b' addr2)) ->
                   go addr2 bAddr $ hUpdate heap bAddr $ NMarked (Visit 2) (NAp fAddr b')
-                  
-               (NMarked Done node, _, NMarked (Visit 2) (NAp addr1 b')) -> 
+
+               (NMarked Done _, _, NMarked (Visit 2) (NAp addr1 b')) ->
                   go bAddr b' $ hUpdate heap bAddr $ NMarked Done (NAp addr1 fAddr)
-                  
+
                (NInd addr, _, _) -> go addr bAddr heap
-   
 
-{--
-markFrom :: TiHeap -> Addr -> (TiHeap, Addr)
-markFrom heap addr =
-   let
-      node = hLookup heap addr
-   in
-      case node of
-         NMarked _ -> (heap, addr)
 
-         NAp addrLeft addrRight ->
-            let
-               (heap1, addrLeft1) = markFrom heap addrLeft
-               (heap2, addrRight1) = markFrom heap1 addrRight
-            in
-               (hUpdate heap2 addr (NMarked (NAp addrLeft1 addrRight1)), addr)
 
-         NInd addr0 -> markFrom heap addr0
-
-         NData tag addrs ->
-            let
-               (heapAfter, addrsAfter) = mapAccumL markFrom heap addrs
-            in
-               (hUpdate heapAfter addr (NMarked (NData tag addrsAfter)), addr)
-
-         _ -> (hUpdate heap addr $ NMarked node, addr)
---}
-
-         
 markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)
 markFromStack = mapAccumL markFrom
 

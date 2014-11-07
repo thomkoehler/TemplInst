@@ -48,14 +48,14 @@ prop_add2 = getResult (runProg (C.pack add2)) == 5
    where
       add2 :: String
       add2 = [r|
-      
-main = 
+
+main =
    let
       x = 2
       y = 3
    in
       x + y
-      
+
 |]
 
 
@@ -67,13 +67,12 @@ prop_addMul:: Bool
 prop_addMul = getResult (runProg "main = 1 + 2 * 3") == 7
 
 --TODO prop_prog0 :: Bool
-{--
 prop_prog0 :: Bool
 prop_prog0 = getResult (runProg (C.pack prog0)) == 4
    where
       prog0 :: String
       prog0 = [r|
-      
+
 pair x y f = f x y
 
 fst p = p K
@@ -88,10 +87,9 @@ f x y =
       fst (snd (snd (snd a)))
 
 main = f 3 4
-      
+
 |]
-   
---}   
+
 
 -----------------------------------------------------------------------------------------------------------------------
 
