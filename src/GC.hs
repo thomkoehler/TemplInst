@@ -40,6 +40,8 @@ markFrom h a = go a 0 h
 
                (NInd addr, _, _) -> go addr bAddr heap
 
+               _ -> error "Pattern match are non-exhaustive"
+
 
 
 markFromStack :: TiHeap -> TiStack -> (TiHeap, TiStack)

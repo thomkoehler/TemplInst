@@ -30,11 +30,15 @@ languageDef = P.LanguageDef
       P.reservedNames =
          [
             "let",
-            "in"
+            "in",
+            "Pack",
+            "case",
+            "of",
+            "->"
          ],
       P.opStart = P.opLetter languageDef,
       P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~",
-      P.reservedOpNames = ["+", "-", "*", "/"],
+      P.reservedOpNames = ["+", "-", "*", "/", "<", ">"],
       P.caseSensitive  = True
    }
 
@@ -53,6 +57,7 @@ parens = P.parens lexer
 
 reserved :: String -> IParser ()
 reserved = P.reserved lexer
+
 
 reservedOp :: String -> IParser ()
 reservedOp = P.reservedOp lexer
@@ -132,6 +137,37 @@ apExpr = do
       createEApExpr  _ = error "Empty expression encountered."
 
 
+caseExpr :: IParser (Expr  Name)
+caseExpr = do
+   reserved "case"
+   e <- expr
+   reserved "of"
+   alts <- many1 alt
+   return $ ECase e alts
+
+
+alt :: IParser (Alter Name)
+alt = do
+  reservedOp "<"
+  num <- natural
+  reservedOp ">"
+  vars <- many identifier
+  reserved "->"
+  e <- expr
+  return (fromEnum num, vars, e)
+
+
+constr :: IParser (Expr  Name)
+constr = do
+   reserved "Pack"
+   reserved "{"
+   tag <- natural
+   reserved ","
+   arity <- natural
+   reserved "}"
+   return $ EConstr (fromEnum tag) (fromEnum arity)
+
+
 literal :: IParser (Expr  Name)
 literal = do
    i <- natural
@@ -151,7 +187,9 @@ term = choice
       parens expr,
       letExpr,
       literal,
-      var
+      var,
+      constr,
+      caseExpr
    ]
    <?> "term"
 

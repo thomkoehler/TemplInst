@@ -15,8 +15,8 @@ import Parser(parse)
 import GC(gc)
 import ExprQuoter(expr)
 
-import Debug.Trace --TODO remove import Debug.Trace
-import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
+--TODO import Debug.Trace --TODO remove import Debug.Trace
+--TODO import qualified Text.Show.Pretty as Pr --TODO remove import qualified Text.Show.Pretty as Pr
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -29,6 +29,9 @@ K1 x y = y
 S f g x = f x (g x)
 compose f g x = f (g x)
 twice f = compose f f
+
+False = Pack { 1, 0 }
+True = Pack { 2, 0 }
 
 |]
 
